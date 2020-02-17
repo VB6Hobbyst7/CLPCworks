@@ -67,7 +67,7 @@ def tab_processing(pdtinfo):
 def Acc_gen(raw_tab,path,a):
     f=raw_tab
     f['FUND_CLASS']=f['FUND_NAME']
-    '''
+    
     for index,row in f.iterrows():
         district=set(f['CT_REFER'])
         if row['FUND_CODE']=='CL8010':
@@ -84,7 +84,7 @@ def Acc_gen(raw_tab,path,a):
     f['performance']=f['ACK_MONEY']*f['FUND_ZBXS']/10000
     
     district.remove(np.nan)
-    '''
+    
     cust={}
     feature={}
     feature_d={}
