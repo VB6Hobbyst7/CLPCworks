@@ -68,46 +68,54 @@ def Acc_gen(raw_tab,path,a):
     f=raw_tab
     f['FUND_CLASS']=f['FUND_NAME']
     
-    for index,row in f.iterrows():
-        district=set(f['CT_REFER'])
-        if row['FUND_CODE']=='CL8010':
-            f.loc[index,['FUND_CLASS']]="月月盈"
-            f.loc[index,['FUND_ZBXS']]=1/12
-        elif row['FUND_CODE']=='CL8012':
-            f.loc[index,['FUND_CLASS']]='半年盈'
-            f.loc[index,['FUND_ZBXS']]=1/2
-        elif row['FUND_CODE']=='CL8013':
-            f.loc[index,['FUND_CLASS']]='年年盈'
-        else:
-            f.loc[index,['FUND_CLASS']]='封闭型'
-        
+    f.loc[f['FUND_CODE']=='CL8010','FUND_CLASS']='月月盈'
+    f.loc[f['FUND_CODE']=='CL8010','FUND_ZBXS']=1/12
+    f.loc[f['FUND_CODE']=='CL8012','FUND_CLASS']='半年盈'
+    f.loc[f['FUND_CODE']=='CL8012','FUND_ZBXS']=1/2
+    f.loc[f['FUND_CODE']=='CL8013','FUND_CLASS']='年年盈'
+    f.loc[f['FUND_CODE']=='CL8013','FUND_ZBXS']=1
+    f.loc[~f['FUND_CODE'].isin(['CL8010','CL8012','CL8013']),'FUND_CLASS']='封闭型'
+    
+    f.loc[f['AGENCY_NAME']=="徽商银行",'SALE_COMPANY_NAME_FEE']='徽商银行'
     f['performance']=f['ACK_MONEY']*f['FUND_ZBXS']/10000
     
+    district=set(f['CT_REFER'])
+    channel=set(f['SALE_COMPANY_NAME_FEE'])
     district.remove(np.nan)
+    
+    f['REFERID'].fillna(value='anonym',inplace=True)
     
     cust={}
     feature={}
     feature_d={}
     #样本分组的特征值矩阵
-    alter_matrix=[[''         ,''              ,'*客户姓名*产品名称*推荐人代码'],
-                  ['FUND_ACCT','CUST_NAME'     ,'*产品姓名*推荐人代码'],
-                  ['REFERID'  ,'CUSTNAME_REFER','*客户姓名*产品名称'],
-                  ['CT_REFER' ,''              ,'*客户姓名*产品名称*分支机构']
+    alter_matrix=[[''         ,''              ,'客户姓名*产品名称*地市名称*分支机构*推荐人代码'],
+                  ['FUND_ACCT','CUST_NAME'     ,'产品名称*推荐人代码'],
+                  ['REFERID'  ,'CUSTNAME_REFER','客户姓名*产品名称'],
+                  ['CT_REFER' ,''              ,'客户姓名*产品名称*分支机构'],
+                  ['SALE_COMPANY_NAME_FEE',''  ,'客户姓名*产品名称*地市名称*分支机构*推荐人代码']
                   ]
     alter_para1=alter_matrix[a][0]
     alter_para2=alter_matrix[a][1]
     alter_para3=alter_matrix[a][2]
     general_tab=pd.DataFrame()
-
+    
     if a==0:
         cust={'总账账户':" "}
     elif a==3:
         for dst in district:
             cust[dst]=""
+    elif a==4:
+        for chl in channel:
+            cust[chl]=""
     else:
         cust=dict(zip(f[alter_para1],f[alter_para2]))
     
+    #注意字典列表要去掉nan,不然会报错
     cust_list=list(cust.keys())
+    
+    print(cust_list,len(cust_list))
+    
     for i in range(len(cust_list)):
         print(i,cust_list[i])
         try:
@@ -119,10 +127,14 @@ def Acc_gen(raw_tab,path,a):
                 f_temp_raw=f
             elif a==3:
                 f_temp_raw=f.loc[f.CT_REFER==cust_list[i]]
+            elif a==4:
+                f_temp_raw=f.loc[f.SALE_COMPANY_NAME_FEE==cust_list[i]]
             
             cust_temp=cust_list[i]
             Acct_prs=pd.DataFrame()
-            f_temp=f_temp_raw[['ACK_DATE','DUE_DATE','FUND_NAME','CUST_NAME','ACK_MONEY','REFERID','CT_REFER','CR_REFER']]
+            f_temp=f_temp_raw[['ACK_DATE','DUE_DATE','FUND_NAME','CUST_NAME',
+                               'ACK_MONEY','REFERID','CT_REFER','CR_REFER',
+                               'SALE_COMPANY_NAME_FEE']]
             
             for itm in range(len(f_temp)):
                 f_temp1=f_temp.iloc[itm]
@@ -132,18 +144,21 @@ def Acc_gen(raw_tab,path,a):
                 acct_temp.iloc[1,0]=f_temp1['DUE_DATE']
                 
                 if a==1:
-                    acct_temp.iloc[0,1]='*%s*%s' %(f_temp1['FUND_NAME'],f_temp1['REFERID'])
-                    acct_temp.iloc[1,1]='*%s*%s' %(f_temp1['FUND_NAME'],f_temp1['REFERID'])
+                    acct_temp.iloc[0,1]='%s*%s' %(f_temp1['FUND_NAME'],f_temp1['REFERID'])
+                    acct_temp.iloc[1,1]='%s*%s' %(f_temp1['FUND_NAME'],f_temp1['REFERID'])
                 elif a==2:
-                    acct_temp.iloc[0,1]='*%s*%s' %(f_temp1['CUST_NAME'],f_temp1['FUND_NAME'])
-                    acct_temp.iloc[1,1]='*%s*%s' %(f_temp1['CUST_NAME'],f_temp1['FUND_NAME'])
+                    acct_temp.iloc[0,1]='%s*%s' %(f_temp1['CUST_NAME'],f_temp1['FUND_NAME'])
+                    acct_temp.iloc[1,1]='%s*%s' %(f_temp1['CUST_NAME'],f_temp1['FUND_NAME'])
                 elif a==0:
-                    acct_temp.iloc[0,1]='*%s*%s*%s' %(f_temp1['CUST_NAME'],f_temp1['FUND_NAME'],f_temp1['REFERID'])
-                    acct_temp.iloc[1,1]='*%s*%s*%s' %(f_temp1['CUST_NAME'],f_temp1['FUND_NAME'],f_temp1['REFERID'])
+                    acct_temp.iloc[0,1]='%s*%s*%s*%s*%s' %(f_temp1['CUST_NAME'],f_temp1['FUND_NAME'],f_temp1['CT_REFER'],f_temp1['CR_REFER'],f_temp1['REFERID'])
+                    acct_temp.iloc[1,1]='%s*%s*%s*%s*%s' %(f_temp1['CUST_NAME'],f_temp1['FUND_NAME'],f_temp1['CT_REFER'],f_temp1['CR_REFER'],f_temp1['REFERID'])
                 elif a==3:
-                    acct_temp.iloc[0,1]='*%s*%s*%s' %(f_temp1['CUST_NAME'],f_temp1['FUND_NAME'],f_temp1['CR_REFER'])
-                    acct_temp.iloc[1,1]='*%s*%s*%s' %(f_temp1['CUST_NAME'],f_temp1['FUND_NAME'],f_temp1['CR_REFER'])
-                
+                    acct_temp.iloc[0,1]='%s*%s*%s' %(f_temp1['CUST_NAME'],f_temp1['FUND_NAME'],f_temp1['CR_REFER'])
+                    acct_temp.iloc[1,1]='%s*%s*%s' %(f_temp1['CUST_NAME'],f_temp1['FUND_NAME'],f_temp1['CR_REFER'])
+                elif a==4:
+                    acct_temp.iloc[0,1]='%s*%s*%s*%s*%s' %(f_temp1['CUST_NAME'],f_temp1['FUND_NAME'],f_temp1['CT_REFER'],f_temp1['CR_REFER'],f_temp1['REFERID'])
+                    acct_temp.iloc[1,1]='%s*%s*%s*%s*%s' %(f_temp1['CUST_NAME'],f_temp1['FUND_NAME'],f_temp1['CT_REFER'],f_temp1['CR_REFER'],f_temp1['REFERID'])
+            
                 acct_temp.iloc[0,2]=f_temp1['ACK_MONEY']/10000
                 acct_temp.iloc[1,3]=f_temp1['ACK_MONEY']/10000
             
@@ -173,7 +188,7 @@ def Acc_gen(raw_tab,path,a):
             pass
         continue
     # 生成透视表
-    if a==3 :
+    if a==3 or a==4:
         city_pivot=pd.pivot_table(f,values=['performance'],index=[alter_para1],columns=['FUND_CLASS'],aggfunc=np.sum)
     elif a==1 or a==2:
         city_pivot=pd.pivot_table(f,values=['performance'],index=[alter_para2],columns=['FUND_CLASS'],aggfunc=np.sum)
@@ -191,7 +206,7 @@ def Acc_gen(raw_tab,path,a):
 #分析程序主模块
 #选择分析的类型----------------------------------------------
 a=input('请选择需要生成的账户分组类型：\n0-总账户\n1-客户个人账户\n2-推荐人账户\n3-寿险地市账户\n4-销售渠道账户\n>>>')
-if a in ["0","1","2","3"]:
+if a in ["0","1","2","3","4"]:
     print("开始执行分析...")
 else:
     print("BE CAREFUL:请输入合法的账户类型代码")
@@ -211,8 +226,8 @@ tab_refine=tab_processing(pdtinfo)
 #类SQL查询
 #tab_refine=tab_refine[tab_refine['COMPANY_REFER'].isin(['养老险公司'])]
 #tab_refine=tab_refine.loc[tab_refine.CUSTNAME_REFER=="张曦"]
-tab_refine=tab_refine[tab_refine['ACK_DATE']>'2019-12-31']
-#tab_refine=tab_refine[tab_refine['ACK_DATE']<'2017-12-31']
+tab_refine=tab_refine[tab_refine['ACK_DATE']>'2016-12-31']
+tab_refine=tab_refine[tab_refine['ACK_DATE']<'2017-12-31']
 
 
 #debug
