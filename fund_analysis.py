@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Feb  3 14:21:25 2020
-
+v1.0 has finished on 2020-2-18
 @author: zhangxi
 """
 
@@ -114,8 +114,6 @@ def Acc_gen(raw_tab,path,a):
     #注意字典列表要去掉nan,不然会报错
     cust_list=list(cust.keys())
     
-    print(cust_list,len(cust_list))
-    
     for i in range(len(cust_list)):
         print(i,cust_list[i])
         try:
@@ -224,10 +222,10 @@ tab_refine=tab_processing(pdtinfo)
 #account_raw=pd.DataFrame(index=whole_date)
 
 #类SQL查询
-#tab_refine=tab_refine[tab_refine['COMPANY_REFER'].isin(['养老险公司'])]
+tab_refine=tab_refine[tab_refine['COMPANY_REFER'].isin(['养老险公司'])]
 #tab_refine=tab_refine.loc[tab_refine.CUSTNAME_REFER=="张曦"]
-tab_refine=tab_refine[tab_refine['ACK_DATE']>'2016-12-31']
-tab_refine=tab_refine[tab_refine['ACK_DATE']<'2017-12-31']
+tab_refine=tab_refine[tab_refine['ACK_DATE']>'2019-12-31']
+#tab_refine=tab_refine[tab_refine['ACK_DATE']<'2017-12-31']
 
 
 #debug
