@@ -210,8 +210,8 @@ else:
     print("BE CAREFUL:请输入合法的账户类型代码")
     sys.exit()
 #-----------------------------------------------------------
-db_path="F:/pdt/database/"
-cardre_path="F:/pdt/"
+db_path="E:/OneDrive/Python工作/CLPCworks/database"
+cardre_path="E:/OneDrive/Python工作/CLPCworks/"
 pdtinfo=pd.read_csv(cardre_path+"产品基本信息查询.csv")
 pdtinfo=pdtinfo.rename(columns=lambda x:x.replace('C_FUNDNAME','FUND_NAME'))
 pdtinfo=pdtinfo[3:]
