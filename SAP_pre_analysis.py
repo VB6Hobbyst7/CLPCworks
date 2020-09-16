@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import re
 
-origin=pd.read_excel('F:/desktop_temp/AccSheet.xls')
+origin=pd.read_excel('G:/desktop_temp/AccSheet.xls')
 origin['业务摘要']=origin['业务摘要'].astype("str")
 AccCode={}
 
@@ -62,10 +62,14 @@ for index,row in origin.iterrows():
     
     if row['科目代码']==6041020000:#职业年金收入-投管
         nm=txt_temp
-        if re.search('职业年金--(.*)',txt_temp):
-            nm=re.search('职业年金--(.*)',txt_temp)
+        if re.search('职业年金--(.*)|业绩报酬--(.*)',txt_temp):
+            nm=re.search('职业年金--(.*)|业绩报酬--(.*)',txt_temp)
             nm=nm.group(0)[6:]
             origin.iloc[index,-2]=nm
+        if re.search('业绩报酬',txt_temp):
+            origin.iloc[index,3]='业绩报酬'
+        else:
+            origin.iloc[index,3]='常规投管'
     
     if row['科目代码']==6039020100:#企业年金收入-账管
         nm_pattern=re.compile('(?<=确认应收).*(?=账管费)')
@@ -106,7 +110,7 @@ for index,row in origin.iterrows():
                 nm_res="铜陵有色"
             
             origin.iloc[index,-2]=nm_res
-            if nm_res in ['铜陵有色','叉车集团','古井集团']:
+            if nm_res in ['铜陵有色','叉车集团','古井集团','新华传媒']:
                 origin.iloc[index,-1]="单一计划"
             else:
                 origin.iloc[index,-1]="集合计划"
@@ -159,10 +163,13 @@ for index,row in origin.iterrows():
             origin.iloc[index,3]='团养'
         else:
             origin.iloc[index,3]='个养'
+            
+
+
 origin['科目余额计算列']=origin["贷方"]-origin["借方"]
 
 dbp=origin.loc[origin.科目代码==6051020500]
-
+origin.to_excel('G:/desktop_temp/result.xls')
         
 
 

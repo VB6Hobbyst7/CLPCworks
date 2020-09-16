@@ -177,7 +177,7 @@ def Acc_gen(raw_tab,path,a):
             rec_date_ind=Acct_prs[Acct_prs['结余']==feature[cust_temp]].index[-1]
             feature_d[cust_temp]=Acct_prs.iloc[rec_date_ind,0]
             
-            Acct_prs.to_excel("F:/pdt/account/%s-%s.xlsx" %(cust_temp,cust.get(cust_temp)))
+            Acct_prs.to_excel("g:/pdt/account/%s-%s.xlsx" %(cust_temp,cust.get(cust_temp)))
             s_temp=pd.Series([cust_temp,cust.get(cust_temp),feature.get(cust_temp),feature_d.get(cust_temp)])
             general_tab=general_tab.append(s_temp,ignore_index=True)
             general_tab.sort_values(by=[2],ascending=False,inplace=True)
@@ -224,8 +224,8 @@ tab_refine=tab_processing(pdtinfo)
 #类SQL查询
 tab_refine=tab_refine[tab_refine['COMPANY_REFER'].isin(['养老险公司'])]
 #tab_refine=tab_refine.loc[tab_refine.CUSTNAME_REFER=="张曦"]
-tab_refine=tab_refine[tab_refine['ACK_DATE']>'2019-12-31']
-#tab_refine=tab_refine[tab_refine['ACK_DATE']<'2017-12-31']
+#tab_refine=tab_refine[tab_refine['ACK_DATE']>'2019-12-31']
+#tab_refine=tab_refine[tab_refine['ACK_DATE']<'2019-06-30']
 
 
 #debug
@@ -233,10 +233,11 @@ tab_refine=tab_refine[tab_refine['ACK_DATE']>'2019-12-31']
 #debug_print.to_excel(cardre_path+'debug_print.xlsx')
 
 to_anal=tab_refine
-path='F:/pdt/account/'
+path='g:/pdt/account/'
 f=os.listdir(path)
 for files in f:
     os.remove(path+files)
 
 print("*REPORT*path:%s-%s files have been removed" %(path,len(f)))
 Acc_gen(to_anal,cardre_path,int(a))
+to_anal.to_excel(path+'analyse.xlsx')
