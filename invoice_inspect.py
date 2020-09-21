@@ -18,7 +18,7 @@ black_list=[]
 departments_list=["市场一部",'市场二部','综合管理部','财务会计部','职业年金部','业务运营部']
 #对原始数据标记分组
 flag=0
-dpt="lalala"
+dpt="未做标识"
 for i in range(len(rw)):    
     text=rw.iloc[i,0]
     if text in departments_list:
@@ -132,6 +132,7 @@ def iv_clean1(immediate_dict,c):
         e6=[] #金额
         e7=[] #税率
         e8=[] #税额
+        e9=[] #价税小计
         
         if test.iloc[i,0]=="税额":
             a=i
@@ -147,8 +148,7 @@ def iv_clean1(immediate_dict,c):
                         compl='[^((-)?(\d*)(\.\d*)?)]'  #非数值的正则化表达
                         items=re.search(compl,test.iloc[j+1,0])
                         if not items is None:
-                            #print(c,test.iloc[j+1,0],len(test.iloc[j+1,0]))
-                            if len(test.iloc[j+1,0])>2:   #判断出了规格型号
+                            if len(test.iloc[j+1,0])>=2:   #判断出了规格型号
                                 e2.append(test.iloc[j+1,0])
                                 items_dict['规格型号']=e2
                                 
@@ -167,7 +167,7 @@ def iv_clean1(immediate_dict,c):
                                         items_dict['单价']=e5
                                 #完美的处理（规格、单位、数量、单价、要素齐全）
                                     
-                            elif len(test.iloc[j+1,0])==1:   #没有规格，直接判断型号
+                            elif len(test.iloc[j+1,0])==1:   #没有规格，直接判断单位
                                     e3.append(test.iloc[j+1,0])
                                     items_dict['单位']=e3
                                     
@@ -178,16 +178,49 @@ def iv_clean1(immediate_dict,c):
                                         items_dict['数量']=e4
                                         e5.append(test.iloc[j+3,0])
                                         items_dict['单价']=e5
-                        #此处预留只有数量、单价的表达
-                        
+                        #项目后取型取取到数字型,未写完工
+                        else:
+                            items=re.search(compl,test.iloc[j+2,0])
+                            if not items is None:       #规格型号是数字型，后面跟着单位
+                                e2.append(test.iloc[j+1,0])
+                                e3.append(test.iloc[j+2,0])
+                                items_dict['规格型号']=e2
+                                items_dict['单位']=e3
+                                compl='\d+(\.\d+)?'   #数量的正则化表达
+                                items=re.search(compl,test.iloc[j+3,0])
+                                if not items is None:
+                                    e4.append(test.iloc[j+3,0])
+                                    e5.append(test.iloc[j+4,0])
+                                    items_dict['数量']=e4
+                                    items_dict['单价']=e5
+                            #完美的处理（规格、单位、数量、单价、要素齐全）
+                            else:       #首次出现数字型的位置至少在数量栏
+                                items=re.search('\d\d?%|(免税)',test.iloc[j+4,0])  #往后数四格是税率
+                                if not items is None:#首次出现数字型的位置在数量栏
+                                    e4.append(test.iloc[j+1,0])
+                                    e5.append(test.iloc[j+2,0])
+                                    items_dict['数量']=e4
+                                    items_dict['单价']=e5
+                                items=re.search('\d\d?%|(免税)',test.iloc[j+3,0])
+                                if not items is None:#首次出现数字型的位置在单价栏
+                                    e5.append(test.iloc[j+1,0])
+                                    items_dict['单价']=e5
+                                
                     items=re.search('\d\d?%|(免税)',test.iloc[j,0])  #定位税率
                     if not items is None:
                         e7.append(items.group(0))
                         e8.append(test.iloc[j+1,0])
                         e6.append(test.iloc[j-1,0])
+                        #价税小计
+                        if not test.iloc[j+1,0]=="***":
+                            e9.append(float(test.iloc[j-1,0])+float(test.iloc[j+1,0]))
+                        else:
+                            e9.append(float(test.iloc[j-1,0]))
+                            
                         items_dict['税率']=e7
                         items_dict['税额']=e8
                         items_dict['金额']=e6
+                        items_dict['价税小计']=e9
                     
     immediate_dict['发票明细']=items_dict
     #最后修正下代开发票信息
@@ -267,6 +300,7 @@ def iv_clean2(immediate_dict):
     return df
 ##############################
 ##主程序
+
 for c in range(1,cnts+1):
     immediate_dict.clear()
     test=rw[rw['分组标志']==c]
@@ -290,7 +324,14 @@ for index,row in grand_tab.iterrows():
         grand_tab.loc[index,'备注']="销售方娱乐、会所字样"
     if row['销售方名称'] in black_list:
         grand_tab.loc[index,'备注']=grand_tab.loc[index,'备注']+",销售方黑名单预警"
-        
+    #检查餐饮供应商的名称
+    restautant=row['发票明细'].get("项目")
+    if "餐饮" in restautant[0]:
+        compl='?<=(饭|餐|饮|食|菜|酒|烧|烤|膳|煮|牛|羊|鱼|渔|卤|宴|锅|猪|狗|)'
+        items=re.search(compl,row['销售方名称']).group(0)
+        if items is None:       
+            grand_tab.loc[index,"备注"]=grand_tab.loc[index,'备注']+",销售方无餐饮店字样"
+
 for i in range(len(grand_tab)):
     dst1=grand_tab.loc[i,'发票号码']
     for j in range(i+1,len(grand_tab)):
