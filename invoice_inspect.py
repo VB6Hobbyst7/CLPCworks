@@ -328,7 +328,7 @@ for index,row in grand_tab.iterrows():
     restautant=row['发票明细'].get("项目")
     if "餐饮" in restautant[0]:
         
-        compl='.*(餐|饮|酒|菜|饭|烧|烤|锅|鱼|渔|牛|羊|猪|狗|肠|卤|吃)'
+        compl='.*(餐|饮|酒|菜|饭|烧|烤|锅|鱼|渔|牛|羊|猪|狗|肠|卤|吃|食|饺|肉)'
         items=re.search(compl,row['销售方名称'])
         if items is None:       
             grand_tab.loc[index,"备注"]=grand_tab.loc[index,'备注']+"销售方无餐饮店字样"
