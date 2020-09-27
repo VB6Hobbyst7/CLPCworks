@@ -7,40 +7,17 @@ Created on Mon Sep 14 12:50:15 2020
 
 import pandas as pd
 import re
+import time
+from functools import wraps
 
-rw=pd.read_csv('E:/OneDrive/Python工作/CLPCworks/invoice.txt')
-rw.columns=['描述文本']
-rw['分组标志']=""
+def timer(func):
+    @wraps(func)
+    def wrapper(*args,**kwargs):
+        t1=time.time()
+        func
+        print(func.__name__)
+    return wrapper
 
-grand_tab=pd.DataFrame()
-immediate_dict={}
-black_list=[]
-departments_list=["市场一部",'市场二部','综合管理部','财务会计部','职业年金部','业务运营部']
-#对原始数据标记分组
-flag=0
-dpt="未做标识"
-for i in range(len(rw)):    
-    text=rw.iloc[i,0]
-    if text in departments_list:
-        dpt=text    
-    if re.search(".*发票查验明细",text):
-        flag+=1
-        rw.iloc[i,1]=flag
-    if re.search(".*任何单位或个人有权拒收并向当地税务机关举报",text):
-        rw.iloc[i,1]='aaa'
-        rw.iloc[i-1,0]=dpt
-print("本次共处理%s张发票：" %(flag))
-cnts=flag    #获得处理发票的次数counts
-flag=""
-
-for i in range(len(rw)):
-    if rw.iloc[i,1]!="" and rw.iloc[i,1]!="aaa":
-        flag=rw.iloc[i,1]
-    if rw.iloc[i,1]=='':
-        rw.iloc[i,1]=flag
-    if rw.iloc[i,1]=="aaa":
-        flag=""
-    
 def iv_clean1(immediate_dict,c):
 #############类专票的处理块#####################
     items_dict={}
@@ -178,7 +155,6 @@ def iv_clean1(immediate_dict,c):
                                         items_dict['数量']=e4
                                         e5.append(test.iloc[j+3,0])
                                         items_dict['单价']=e5
-                        #项目后取型取取到数字型,未写完工
                         else:
                             items=re.search(compl,test.iloc[j+2,0])
                             if not items is None:       #规格型号是数字型，后面跟着单位
@@ -232,8 +208,6 @@ def iv_clean1(immediate_dict,c):
     df=df.T
     
     return df
-
-####################卷票的处理块
 def iv_clean2(immediate_dict):
     immediate_dict['发票种类']=test.iloc[3,0]             #0.发票种类
     immediate_dict['报销部门（参考）']=test.iloc[-1,0]
@@ -298,8 +272,41 @@ def iv_clean2(immediate_dict):
     df=pd.DataFrame.from_dict(immediate_dict,orient="index")
     df=df.T
     return df
-##############################
-##主程序
+
+#发票核查主程序
+
+rw=pd.read_csv('E:/OneDrive/Python工作/CLPCworks/invoice.txt')
+rw.columns=['描述文本']
+rw['分组标志']=""
+
+grand_tab=pd.DataFrame()
+immediate_dict={}
+black_list=[]
+departments_list=["市场一部",'市场二部','综合管理部','财务会计部','职业年金部','业务运营部']
+#对原始数据标记分组
+flag=0
+dpt="未做标识"
+for i in range(len(rw)):    
+    text=rw.iloc[i,0]
+    if text in departments_list:
+        dpt=text    
+    if re.search(".*发票查验明细",text):
+        flag+=1
+        rw.iloc[i,1]=flag
+    if re.search(".*任何单位或个人有权拒收并向当地税务机关举报",text):
+        rw.iloc[i,1]='aaa'
+        rw.iloc[i-1,0]=dpt
+print("本次共处理%s张发票：" %(flag))
+cnts=flag    #获得处理发票的次数counts
+flag=""
+
+for i in range(len(rw)):
+    if rw.iloc[i,1]!="" and rw.iloc[i,1]!="aaa":
+        flag=rw.iloc[i,1]
+    if rw.iloc[i,1]=='':
+        rw.iloc[i,1]=flag
+    if rw.iloc[i,1]=="aaa":
+        flag=""
 
 for c in range(1,cnts+1):
     immediate_dict.clear()
@@ -314,34 +321,41 @@ for c in range(1,cnts+1):
         grand_tab=pd.concat([grand_tab,df],join='outer',ignore_index=True)
 
 #检查模块#
-grand_tab['备注']=""
+grand_tab['预警标志']=""
 for index,row in grand_tab.iterrows():
     if row['购买方名称']!="中国人寿养老保险股份有限公司安徽省分公司":
-        grand_tab.loc[index,'备注']="公司名称错误"
+        grand_tab.loc[index,'预警标志']="公司名称错误"
     if row['购买方纳税人识别号']!="91340000MA2MUGNP93":
-        grand_tab.loc[index,'备注']="税号错误"
+        grand_tab.loc[index,'预警标志']="税号错误"
     if re.search(".*娱乐.*|.*会所.*",row['销售方名称']):
-        grand_tab.loc[index,'备注']="销售方娱乐、会所字样"
+        grand_tab.loc[index,'预警标志']="销售方娱乐、会所字样"
     if row['销售方名称'] in black_list:
-        grand_tab.loc[index,'备注']=grand_tab.loc[index,'备注']+",销售方黑名单预警"
+        grand_tab.loc[index,'预警标志']=grand_tab.loc[index,'预警标志']+",销售方黑名单预警"
     #检查餐饮供应商的名称
     restautant=row['发票明细'].get("项目")
     if "餐饮" in restautant[0]:
         
-        compl='.*(餐|饮|酒|菜|饭|烧|烤|锅|鱼|渔|牛|羊|猪|狗|肠|卤|吃|食|饺|肉)'
+        compl='.*(餐|饮|酒|菜|饭|烧|烤|锅|鱼|渔|牛|羊|猪|狗|肠|卤|吃|食|饺|肉|粥)'
         items=re.search(compl,row['销售方名称'])
         if items is None:       
-            grand_tab.loc[index,"备注"]=grand_tab.loc[index,'备注']+"销售方无餐饮店字样"
+            grand_tab.loc[index,"预警标志"]=grand_tab.loc[index,'预警标志']+"销售方无餐饮店字样"
             
 for i in range(len(grand_tab)):
     dst1=grand_tab.loc[i,'发票号码']
+    electri_distinct=""
+    if '电子' in grand_tab.loc[i,'发票种类']:
+        electri_distinct=grand_tab.loc[i,'校验码']
+
     for j in range(i+1,len(grand_tab)):
         dst2=grand_tab.loc[j,'发票号码']
-        if dst1[:-1]==dst2[:-1]:
-            grand_tab.loc[i,'备注']=grand_tab.loc[i,'备注']+str((i,j))
-            grand_tab.loc[j,'备注']=grand_tab.loc[j,'备注']+str((i,j))
-
+        if dst1[:-1]==dst2[:-1] and abs(int(dst1[-1])-int(dst2[-1]))==1:
+            grand_tab.loc[i,'预警标志']=grand_tab.loc[i,'预警标志']+str((i,j))
+            grand_tab.loc[j,'预警标志']=grand_tab.loc[j,'预警标志']+str((i,j))
+        if grand_tab.loc[j,"校验码"]==electri_distinct:
+            grand_tab.loc[i,'预警标志']=grand_tab.loc[i,'预警标志']+",电子发票重复"
+            grand_tab.loc[j,'预警标志']=grand_tab.loc[j,'预警标志']+",电子发票重复"
+        
+    
 grand_tab.drop_duplicates(subset='校验码',keep="first",inplace=True)
-
-alert_tab = grand_tab[grand_tab["备注"] != ""]
-
+alert_tab = grand_tab[grand_tab["预警标志"] != ""]
+alert_tab.to_excel('C:/Users/ZhangXi/Desktop/alert.xlsx')
