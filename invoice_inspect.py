@@ -322,7 +322,7 @@ def inspector(rw_text,y,m):
         if row['购买方纳税人识别号']!="91340000MA2MUGNP93":
             grand_tab.loc[index,'预警标志']=grand_tab.loc[index,'预警标志']+"税号错误"
         if re.search(".*娱乐.*|.*会所.*",row['销售方名称']):
-            grand_tab.loc[index,'预警标志']=grand_tab.loc[index,'预警标志']+"销售方娱乐、会所字样"
+            grand_tab.loc[index,'预警标志']=grand_tab.loc[index,'预警标志']+"销售方娱乐、会所字样错误"
         if row['开票日期'][:4]!=y or row['开票日期'][5:7] not in m:
             grand_tab.loc[index,'预警标志']=grand_tab.loc[index,'预警标志']+"开票日期错误"
         
