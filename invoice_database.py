@@ -11,18 +11,32 @@ from invoice_inspect import inspector
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-#生成发票大表
+#生成发票检查大表
 rw_text=pd.read_csv('E:/OneDrive/Python工作/CLPCworks/invoice.txt',error_bad_lines=False)
 y="2020"
 m=["07",'08','09']
 
-grand_tab=inspector(rw_text,y,m)
-alert_tab = grand_tab[grand_tab["预警标志"] != ""]
-grand_tab[grand_tab['系统公文号']==""]
-for index,row in grand_tab.iterrows():
-    if '错误' in row['预警标志']:
-        grand_tab.loc[index,'系统公文号']='作废'
-
+def grand_tab_gen():
+    grand_tab=inspector(rw_text,y,m)
+    #alert_tab = grand_tab[grand_tab["预警标志"] != ""]
+    grand_tab[grand_tab['系统公文号']==""]
+    
+    for index,row in grand_tab.iterrows():
+        if '错误' in row['预警标志']:
+            grand_tab.loc[index,'系统公文号']='作废'
+    engine = create_engine('mysql+pymysql://root:abcd1234@localhost:3306/clpc_ah?charset=utf8')
+    
+    pd.io.sql.to_sql(grand_tab,'invoice777',engine,if_exists='append')
+    DbSession = sessionmaker()
+    session = DbSession()
+    session.commit()
+    
+    return grand_tab
+'''
+temp_tab=grand_tab_gen()
+temp_tab.to_excel('C:/Users/ZhangXi/Desktop/to_sql.xlsx')
+alert_tab = temp_tab[temp_tab["预警标志"] != ""]
+'''
 
 def OAfile_gen():             #导出数据库中公文号为空的表
     db = pymysql.connect("localhost","root","abcd1234",'clpc_ah')
@@ -41,20 +55,19 @@ def OAfile_gen():             #导出数据库中公文号为空的表
     return x_tab
 #OAfile_gen()
 
-def OAfile_update():                                #更新系统公文号
-    update_tab=pd.read_excel('C:/Users/ZhangXi/Desktop/at.xlsx',dtype={'发票号码':str}).to_dict(orient='list')
+def OAfile_update():                        #更新系统公文号
+    update_tab=pd.read_excel('C:/Users/ZhangXi/Desktop/at1.xlsx',dtype={'发票号码':str}).to_dict(orient='list')
     dict1=dict(zip(update_tab['发票号码'],update_tab['系统公文号']))
     db = pymysql.connect("localhost","root","abcd1234",'clpc_ah')
     cursor = db.cursor()
     temp1=update_tab['发票号码']
-    temp2=[dict1[i] for i in temp1]
     sql=("UPDATE invoice set 系统公文号=%s where 发票号码=%s;")
     for j in range(len(temp1)):
-        cursor.execute(sql,(temp2[j],temp1[j]))   
+        cursor.execute(sql,(dict1.get(temp1[j]),temp1[j]))   
     db.commit()
     cursor.close()
     db.close()
-#OAfile_update()
+OAfile_update()
 '''
 
 engine = create_engine('mysql+pymysql://root:abcd1234@localhost:3306/clpc_ah?charset=utf8',echo=True)

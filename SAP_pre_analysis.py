@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import re
 
-origin=pd.read_excel('G:/desktop_temp/AccSheet.xls')
+origin=pd.read_excel('G:/desktop_temp/AccSheet.xlsx')
 origin['业务摘要']=origin['业务摘要'].astype("str")
 AccCode={}
 
@@ -169,7 +169,7 @@ for index,row in origin.iterrows():
 origin['科目余额计算列']=origin["贷方"]-origin["借方"]
 
 dbp=origin.loc[origin.科目代码==6051020500]
-origin.to_excel('G:/desktop_temp/result.xls')
+origin.to_excel('G:/desktop_temp/result.xlsx')
         
 
 
