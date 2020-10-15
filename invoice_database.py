@@ -12,9 +12,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 #生成发票检查大表
-rw_text=pd.read_csv('E:/OneDrive/Python工作/CLPCworks/invoice.txt',error_bad_lines=False)
+rw_text=pd.read_csv('C:/Users/ZhangXi/Desktop/invoice.txt',error_bad_lines=False)
 y="2020"
-m=["07",'08','09']
+m=["10",'11','12']
 
 def grand_tab_gen():
     grand_tab=inspector(rw_text,y,m)
@@ -24,19 +24,16 @@ def grand_tab_gen():
     for index,row in grand_tab.iterrows():
         if '错误' in row['预警标志']:
             grand_tab.loc[index,'系统公文号']='作废'
+    '''
     engine = create_engine('mysql+pymysql://root:abcd1234@localhost:3306/clpc_ah?charset=utf8')
     
     pd.io.sql.to_sql(grand_tab,'invoice777',engine,if_exists='append')
     DbSession = sessionmaker()
     session = DbSession()
     session.commit()
-    
+    '''
     return grand_tab
-'''
-temp_tab=grand_tab_gen()
-temp_tab.to_excel('C:/Users/ZhangXi/Desktop/to_sql.xlsx')
-alert_tab = temp_tab[temp_tab["预警标志"] != ""]
-'''
+
 
 def OAfile_gen():             #导出数据库中公文号为空的表
     db = pymysql.connect("localhost","root","abcd1234",'clpc_ah')
@@ -53,7 +50,7 @@ def OAfile_gen():             #导出数据库中公文号为空的表
     cursor.close()
     db.close()
     return x_tab
-#OAfile_gen()
+
 
 def OAfile_update():                        #更新系统公文号
     update_tab=pd.read_excel('C:/Users/ZhangXi/Desktop/at1.xlsx',dtype={'发票号码':str}).to_dict(orient='list')
@@ -67,15 +64,18 @@ def OAfile_update():                        #更新系统公文号
     db.commit()
     cursor.close()
     db.close()
-OAfile_update()
-'''
 
-engine = create_engine('mysql+pymysql://root:abcd1234@localhost:3306/clpc_ah?charset=utf8',echo=True)
-#DBSession=sessionmaker(bind=engine)
-b=engine.execute('select * from invoice;').fetchall()
-print(b)
-#sql="select 发票号码,价税合计,销售方名称 from invoice "
-#f=conn.execute(sql)
+a="0"
 
-#pd.io.sql.to_sql(grand_tab,conn,'invoice','clpc_ah',if_exists='append')
-'''
+a=input('请选择本次处理的任务：\n1-生成数据库表预备导入\n2-导出数据库中空公文号的条目\n3-更新系统公文号\n>>>')
+
+if a=="0":
+    pass
+elif a=="1":
+    temp_tab=grand_tab_gen()
+    temp_tab.to_excel('C:/Users/ZhangXi/Desktop/invoice_to_sql.xlsx',index=False)
+    alert_tab = temp_tab[temp_tab["预警标志"] != ""]
+elif a=="2":
+    OAfile_gen()
+elif a=="3":
+    OAfile_update()
