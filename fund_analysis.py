@@ -21,7 +21,7 @@ def timer(func):
         func(*args)
         end_time = time.time()
         print('函数运行时间为：%.2fs' % (end_time - start_time))
-        return #func(*args,**kwargs)
+       
     return wrapper
 
 #取得完整的产品周期，预备制作账户
