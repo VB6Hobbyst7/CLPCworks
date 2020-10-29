@@ -12,11 +12,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 #生成发票检查大表
-rw_text=pd.read_csv('E:/OneDrive/国寿养老工作/invoice.txt',error_bad_lines=False)
-y="2020"
-m=["09",'08','10']
+
 
 def grand_tab_gen():
+    rw_text=pd.read_csv('E:/OneDrive/国寿养老工作/invoice.txt',error_bad_lines=False)
+    y="2020"
+    m=["10",'11','12']
+    
     grand_tab=inspector(rw_text,y,m)
     #alert_tab = grand_tab[grand_tab["预警标志"] != ""]
     grand_tab[grand_tab['系统公文号']==""]
@@ -24,14 +26,7 @@ def grand_tab_gen():
     for index,row in grand_tab.iterrows():
         if '错误' in row['预警标志']:
             grand_tab.loc[index,'系统公文号']='作废'
-    '''
-    engine = create_engine('mysql+pymysql://root:abcd1234@localhost:3306/clpc_ah?charset=utf8')
-    
-    pd.io.sql.to_sql(grand_tab,'invoice777',engine,if_exists='append')
-    DbSession = sessionmaker()
-    session = DbSession()
-    session.commit()
-    '''
+
     return grand_tab
 
 
@@ -68,9 +63,21 @@ def OAfile_update():                        #更新系统公文号
     cursor.close()
     db.close()
 
+def length_test():
+    test_tab=pd.read_excel('C:/Users/ZhangXi/Desktop/invoice_to_sql.xlsx',dtype={'发票号码':str})
+    items=pd.DataFrame()
+    
+    for i in range(len(test_tab)):
+        print(i,test_tab.loc[i,'发票号码'])
+        temp=eval(test_tab.loc[i,'发票明细'])
+        temp1=pd.DataFrame(temp)
+        items=pd.concat([items,temp1])
+        temp.clear()
+    return items
+
 a="0"
 
-a=input('请选择本次处理的任务：\n1-查验发票、生成数据库表预备导入\n2-导出数据库中空公文号的条目\n3-更新系统公文号\n>>>')
+a=input('请选择本次处理的任务：\n1-查验发票、生成数据库表预备导入\n2-校验拟导入的发票明细长度\n3-导出数据库中空公文号的条目\n4-更新系统公文号\n>>>')
 
 if a=="0":
     pass
@@ -79,6 +86,8 @@ elif a=="1":
     temp_tab.to_excel('C:/Users/ZhangXi/Desktop/invoice_to_sql.xlsx',index=False)
     alert_tab = temp_tab[temp_tab["预警标志"] != ""]
 elif a=="2":
-    OAfile_gen()
+    test=length_test()
 elif a=="3":
+    OAfile_gen()
+elif a=="4":
     OAfile_update()

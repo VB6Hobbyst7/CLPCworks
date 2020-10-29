@@ -111,7 +111,7 @@ def iv_clean1(immediate_dict,c,test):
             b=i
             if test.iloc[i,1]==c:
                 sht=divmod((b-a-1),8)  #发票明细的条目数和余数，出现余数则需要补足占用位
-                print("第%s号凭证:(条目数,完美标识)%s" %(c,sht))
+                #print("第%s号凭证:(条目数,完备标识)%s" %(c,sht))
                 if sht[1]!=0:
                     mo=sht[0]+1        #mo是发票的条目数
                 else:
@@ -157,9 +157,9 @@ def iv_clean1(immediate_dict,c,test):
                         else:
                             c_cnt=4
                     context=context[:c_cnt]
-                    print(context)
+                    #print(context)
                     
-                    if sht[1]==0: 
+                    if sht[1]==0:
                         #要素齐全，完美填充
                         e_t2=context[0]
                         e_t3=context[1]
@@ -167,8 +167,8 @@ def iv_clean1(immediate_dict,c,test):
                         e_t5=context[3]
                         
                         
-                    else:
-                        #要素不齐全，难度全在这了
+                    else: #sht[1]!=0,有空缺栏，非完美
+                          #要素不齐全，难度全在这了
                         if len(context)==1:
                             #只有一个要素，这个要素很可能是单价
                             items=re.search('(-)?(\d*)(\.\d*)?',context[0])
@@ -176,33 +176,50 @@ def iv_clean1(immediate_dict,c,test):
                                 #此处应该有一个本数值和发票总价的匹配控制
                                 e_t5=context[0]
                         elif len(context)==2:
-                            pass
+                            print("注意context=2的模块没写:",context)
                         elif len(context)==3:
                             #三个要素都是数字
                             compl='(-)?(\d*)(\.\d*)?'
                             items=re.search(compl,context[0])
                             if not items is None:
                                 e_t4=context[0]
+                            else:
+                                print("注意出现汉字的模块没写:",context)
                             items=re.search(compl,context[1])
                             if not items is None:
                                 e_t5=context[1]
-                            
+                            else:
+                                print("注意出现汉字的模块没写:",context)
                             
                         elif len(context)==4:
-                            if sht[1]!=0:
-                                compl='[^((-)?(\d*)(\.\d*)?)]'
-                                items=re.search(compl,context[0])
+                            #可能会出现有整体不完整，但逐条完整的判断
+                            
+                            compl1='[^((-)?(\d*)(\.\d*)?)]' #非数值的正则表达
+                            compl2='[\u4E00-\u9FA5][\u4E00-\u9FA5]?'        #最多两个汉字的正则表达
+                            items=re.search(compl1,context[0])
+                            if not items is None:
+                                #第一格非数值
+                                items=re.search(compl1,context[1])
                                 if not items is None:
-                                    e_t3=context[0]
-                                
-                                compl='(-)?(\d*)(\.\d*)?'
-                                items=re.search(compl,context[1])
-                                if not items is None:
+                                #第二格非数值:规格、单位、数量、单价
+                                    e_t2=context[0]
+                                    e_t3=context[1]
+                                    e_t4=context[2]
+                                    e_t5=context[3]
+                                else:
+                                #第二格数值：规格|单位、数量、单价
+                                #正则化判断非数值的是规格还是单位
+                                    items=re.search(compl2,context[0])
+                                    if not items is None:
+                                        e_t3=context[0]
+                                    else:
+                                        e_t2=context[0]
+                                    
                                     e_t4=context[1]
-                                items=re.search(compl,context[2])
-                                if not items is None:
                                     e_t5=context[2]
-                    
+                                
+                            
+                            
                     e2.append(e_t2)
                     e3.append(e_t3)
                     e4.append(e_t4)
