@@ -7,7 +7,7 @@ Created on Mon Sep 14 12:50:15 2020
 
 import pandas as pd
 import re
-import time
+import pymysql
 from functools import wraps
 
 
@@ -166,7 +166,6 @@ def iv_clean1(immediate_dict,c,test):
                         e_t4=context[2]
                         e_t5=context[3]
                         
-                        
                     else: #sht[1]!=0,有空缺栏，非完美
                           #要素不齐全，难度全在这了
                         if len(context)==1:
@@ -218,8 +217,6 @@ def iv_clean1(immediate_dict,c,test):
                                     e_t4=context[1]
                                     e_t5=context[2]
                                 
-                            
-                            
                     e2.append(e_t2)
                     e3.append(e_t3)
                     e4.append(e_t4)
@@ -229,7 +226,6 @@ def iv_clean1(immediate_dict,c,test):
                     items_dict['单位']=e3
                     items_dict['数量']=e4
                     items_dict['单价']=e5
-                
                 
     immediate_dict['发票明细']=items_dict
     #最后修正下代开发票信息
@@ -357,6 +353,7 @@ def inspector(rw_text,y,m):
     #检查模块#
     grand_tab['预警标志']=""
     grand_tab['系统公文号']=""
+    grand_tab['凭证号']=''
     for index,row in grand_tab.iterrows():
         if row['购买方名称']!="中国人寿养老保险股份有限公司安徽省分公司":
             grand_tab.loc[index,'预警标志']=grand_tab.loc[index,'预警标志']+"公司名称错误"
@@ -371,6 +368,7 @@ def inspector(rw_text,y,m):
             grand_tab.loc[index,'预警标志']=grand_tab.loc[index,'预警标志']+"销售方黑名单预警"
         #检查餐饮供应商的名称
         restautant=row['发票明细'].get("项目")
+        
         if "餐饮" in restautant[0]:
             compl='.*(餐|饮|酒|菜|饭|烧|烤|锅|鱼|渔|牛|羊|猪|狗|肠|卤|吃|食|饺|肉|粥|虾)'
             items=re.search(compl,row['销售方名称'])
@@ -392,6 +390,5 @@ def inspector(rw_text,y,m):
                 grand_tab.loc[i,'预警标志']=grand_tab.loc[i,'预警标志']+",电子发票重复"
                 grand_tab.loc[j,'预警标志']=grand_tab.loc[j,'预警标志']+",电子发票重复"
             
-        
     grand_tab.drop_duplicates(subset='校验码',keep="first",inplace=True)
     return grand_tab

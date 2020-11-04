@@ -11,9 +11,7 @@ from invoice_inspect import inspector
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-#生成发票检查大表
-
-
+#检查发票信息，生成导入数据库表
 def grand_tab_gen():
     rw_text=pd.read_csv('E:/OneDrive/国寿养老工作/invoice.txt',error_bad_lines=False)
     y="2020"
@@ -56,6 +54,7 @@ def OAfile_update():                        #更新系统公文号
     temp1=update_tab['发票号码']
     sql1=("UPDATE invoice set 系统公文号=%s where 发票号码=%s;")
     sql2=("UPDATE invoice set 报销部门（参考）=%s where 发票号码=%s;")
+    
     for j in range(len(temp1)):
         cursor.execute(sql1,(dict1.get(temp1[j]),temp1[j]))
         cursor.execute(sql2,(dict2.get(temp1[j]),temp1[j]))
@@ -75,9 +74,34 @@ def length_test():
         temp.clear()
     return items
 
-a="0"
+def items_detail():
+    #打开MYSQL数据库导出流水单
+    db = pymysql.connect("localhost","root","abcd1234",'clpc_ah')
+    cursor = db.cursor()
+    sql=("select * from invoice;")
+    cursor.execute(sql)
+    temp=cursor.fetchall()
+    columnDes = cursor.description #获取连接对象的描述信息
+    columnNames = [columnDes[i][0] for i in range(len(columnDes))] #获取列名
+    data_rw= pd.DataFrame([list(i) for i in temp],columns=columnNames)
+    
+    items=pd.DataFrame()
+    for index,row in data_rw.iterrows():
+        print(index)
+        temp=eval(row['发票明细'])
+        temp['开票日期']=row['开票日期']
+        temp['价税合计']=row['价税合计']
+        temp['报销部门（参考）']=row['报销部门（参考）']
+        temp['销售方名称']=row['销售方名称']
+        
+        temp1=pd.DataFrame(temp)
+        items=pd.concat([items,temp1])
+        temp.clear()
+        items.to_excel('C:/Users/ZhangXi/Desktop/invoice_items.xlsx')
+    return items
 
-a=input('请选择本次处理的任务：\n1-查验发票、生成数据库表预备导入\n2-校验拟导入的发票明细长度\n3-导出数据库中空公文号的条目\n4-更新系统公文号\n>>>')
+a="0"
+a=input('请选择本次处理的任务：\n1-查验发票、生成数据库表预备导入\n2-校验拟导入的发票明细长度\n3-导出数据库中空公文号的条目\n4-更新系统公文号\n5-导出发票项目明细\n>>>')
 
 if a=="0":
     pass
@@ -91,3 +115,5 @@ elif a=="3":
     OAfile_gen()
 elif a=="4":
     OAfile_update()
+elif a=="5":
+    items_detal=items_detail()
