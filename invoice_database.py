@@ -24,7 +24,6 @@ def grand_tab_gen():
     for index,row in grand_tab.iterrows():
         if '错误' in row['预警标志']:
             grand_tab.loc[index,'系统公文号']='作废'
-
     return grand_tab
 
 
@@ -107,7 +106,7 @@ if a=="0":
     pass
 elif a=="1":
     temp_tab=grand_tab_gen()
-    temp_tab.to_excel('C:/Users/ZhangXi/Desktop/invoice_to_sql.xlsx',index=False)
+    temp_tab.to_excel('C:/Users/ZhangXi/Desktop/invoice_to_sql.xlsx',index=True)
     alert_tab = temp_tab[temp_tab["预警标志"] != ""]
 elif a=="2":
     test=length_test()

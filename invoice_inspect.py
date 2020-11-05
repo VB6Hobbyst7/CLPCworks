@@ -8,8 +8,6 @@ Created on Mon Sep 14 12:50:15 2020
 import pandas as pd
 import re
 import pymysql
-from functools import wraps
-
 
 def iv_clean1(immediate_dict,c,test):
 #############类专票的处理块#####################
@@ -375,20 +373,46 @@ def inspector(rw_text,y,m):
             if items is None:       
                 grand_tab.loc[index,"预警标志"]=grand_tab.loc[index,'预警标志']+"销售方无餐饮店字样"
                 
+        
+    ###############################查重动工。2020.11.4
+            
+    db = pymysql.connect("localhost","root","abcd1234",'clpc_ah')
+    cursor = db.cursor()
+        
+    sql="select * from invoice"
+    cursor.execute(sql)
+    rows=cursor.fetchall()
+    columnDes = cursor.description #获取连接对象的描述信息
+    columnNames = [columnDes[i][0] for i in range(len(columnDes))] #获取列名
+    db_df=pd.DataFrame([list(i) for i in rows],columns=columnNames)
+    cursor.close()
+    db.close()
+    db_df['预警标志'].replace(to_replace=[None],value="",inplace=True)
+
+    instant_tab_list=grand_tab['校验码']
+    grand_tab=pd.concat([grand_tab,db_df],axis=0,ignore_index=True)
+    
     for i in range(len(grand_tab)):
         dst1=grand_tab.loc[i,'发票号码']
         electri_distinct=""
         if '电子' in grand_tab.loc[i,'发票种类']:
             electri_distinct=grand_tab.loc[i,'校验码']
-    
+        
         for j in range(i+1,len(grand_tab)):
             dst2=grand_tab.loc[j,'发票号码']
-            if dst1[:-1]==dst2[:-1] and abs(int(dst1[-1])-int(dst2[-1]))==1:
+            
+            if dst1[:-1]==dst2[:-1] and abs(int(dst1[-1])-int(dst2[-1]))<2:
                 grand_tab.loc[i,'预警标志']=grand_tab.loc[i,'预警标志']+str((i,j))
                 grand_tab.loc[j,'预警标志']=grand_tab.loc[j,'预警标志']+str((i,j))
+                
+                if grand_tab.loc[i,'校验码'] in instant_tab_list:
+                    temp_series=pd.Series([grand_tab.loc[j,'校验码']])
+                    instant_tab_list=instant_tab_list.append(temp_series)
+            #好似多余了
             if grand_tab.loc[j,"校验码"]==electri_distinct:
                 grand_tab.loc[i,'预警标志']=grand_tab.loc[i,'预警标志']+",电子发票重复"
                 grand_tab.loc[j,'预警标志']=grand_tab.loc[j,'预警标志']+",电子发票重复"
-            
-    grand_tab.drop_duplicates(subset='校验码',keep="first",inplace=True)
+    
+    grand_tab=grand_tab[grand_tab['校验码'].isin(instant_tab_list)]
+    #grand_tab.drop_duplicates(subset='校验码',keep="first",inplace=True)
     return grand_tab
