@@ -119,7 +119,7 @@ def iv_clean1(immediate_dict,c,test):
                     items=re.search('\*(.*)',test.iloc[j,0])   #首先定位出项目名称
                     if not items is None:
                         e1.append(items.group(0))
-                        items_dict['项目']=e1
+                        items_dict['项目']=e1   #有的明细项是没有*号的，要写个判断自己补上
                         nail.append(j)
                     items=re.search('\d\d?%|(免税)',test.iloc[j,0])  #定位税率
                     if not items is None:
@@ -373,12 +373,9 @@ def inspector(rw_text,y,m):
             if items is None:       
                 grand_tab.loc[index,"预警标志"]=grand_tab.loc[index,'预警标志']+"销售方无餐饮店字样"
                 
-        
-    ###############################查重动工。2020.11.4
-            
+    #调取数据库记录进行发票号码比对
     db = pymysql.connect("localhost","root","abcd1234",'clpc_ah')
     cursor = db.cursor()
-        
     sql="select * from invoice"
     cursor.execute(sql)
     rows=cursor.fetchall()
@@ -389,30 +386,28 @@ def inspector(rw_text,y,m):
     db.close()
     db_df['预警标志'].replace(to_replace=[None],value="",inplace=True)
 
-    instant_tab_list=grand_tab['校验码']
-    grand_tab=pd.concat([grand_tab,db_df],axis=0,ignore_index=True)
+    instant_tab_list=grand_tab['校验码'].tolist()
+    grand_tab=pd.concat([grand_tab,db_df],axis=0,ignore_index=True,join='outer')
     
+    #链接数据库对发票号码进行号码比对
     for i in range(len(grand_tab)):
         dst1=grand_tab.loc[i,'发票号码']
-        electri_distinct=""
-        if '电子' in grand_tab.loc[i,'发票种类']:
-            electri_distinct=grand_tab.loc[i,'校验码']
         
         for j in range(i+1,len(grand_tab)):
             dst2=grand_tab.loc[j,'发票号码']
             
             if dst1[:-1]==dst2[:-1] and abs(int(dst1[-1])-int(dst2[-1]))<2:
-                grand_tab.loc[i,'预警标志']=grand_tab.loc[i,'预警标志']+str((i,j))
-                grand_tab.loc[j,'预警标志']=grand_tab.loc[j,'预警标志']+str((i,j))
+                grand_tab.loc[i,'预警标志']=grand_tab.loc[i,'预警标志']+"(%s)" % grand_tab.loc[j,'发票号码']
+                grand_tab.loc[j,'预警标志']=grand_tab.loc[j,'预警标志']+"(%s)" % grand_tab.loc[i,'发票号码']
                 
-                if grand_tab.loc[i,'校验码'] in instant_tab_list:
-                    temp_series=pd.Series([grand_tab.loc[j,'校验码']])
-                    instant_tab_list=instant_tab_list.append(temp_series)
-            #好似多余了
-            if grand_tab.loc[j,"校验码"]==electri_distinct:
-                grand_tab.loc[i,'预警标志']=grand_tab.loc[i,'预警标志']+",电子发票重复"
-                grand_tab.loc[j,'预警标志']=grand_tab.loc[j,'预警标志']+",电子发票重复"
-    
+                x=grand_tab.loc[i,'校验码'] in instant_tab_list
+                y=grand_tab.loc[j,'校验码'] in instant_tab_list
+                
+                if (x and not(y)): 
+                    instant_tab_list.append(grand_tab.loc[j,'校验码'])
+                elif (not(x) and y):
+                    instant_tab_list.append(grand_tab.loc[i,'校验码'])
+            
     grand_tab=grand_tab[grand_tab['校验码'].isin(instant_tab_list)]
     #grand_tab.drop_duplicates(subset='校验码',keep="first",inplace=True)
     return grand_tab

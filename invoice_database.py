@@ -10,6 +10,7 @@ import pandas as pd
 from invoice_inspect import inspector
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+import re
 
 #检查发票信息，生成导入数据库表
 def grand_tab_gen():
@@ -18,7 +19,6 @@ def grand_tab_gen():
     m=["10",'11','12']
     
     grand_tab=inspector(rw_text,y,m)
-    #alert_tab = grand_tab[grand_tab["预警标志"] != ""]
     grand_tab[grand_tab['系统公文号']==""]
     
     for index,row in grand_tab.iterrows():
@@ -66,11 +66,12 @@ def length_test():
     items=pd.DataFrame()
     
     for i in range(len(test_tab)):
-        print(i,test_tab.loc[i,'发票号码'])
+        print('检查第%s张凭证，凭证号：%s' %(i,test_tab.loc[i,'发票号码']))
         temp=eval(test_tab.loc[i,'发票明细'])
         temp1=pd.DataFrame(temp)
         items=pd.concat([items,temp1])
         temp.clear()
+    print('检查完成')
     return items
 
 def items_detail():
@@ -83,20 +84,34 @@ def items_detail():
     columnDes = cursor.description #获取连接对象的描述信息
     columnNames = [columnDes[i][0] for i in range(len(columnDes))] #获取列名
     data_rw= pd.DataFrame([list(i) for i in temp],columns=columnNames)
-    
     items=pd.DataFrame()
+    
     for index,row in data_rw.iterrows():
-        print(index)
         temp=eval(row['发票明细'])
         temp['开票日期']=row['开票日期']
         temp['价税合计']=row['价税合计']
         temp['报销部门（参考）']=row['报销部门（参考）']
         temp['销售方名称']=row['销售方名称']
+        temp['系统公文号']=row['系统公文号']
+        temp['凭证号']=row['凭证号']
         
         temp1=pd.DataFrame(temp)
-        items=pd.concat([items,temp1])
+        items=pd.concat([items,temp1],ignore_index=True)
         temp.clear()
-        items.to_excel('C:/Users/ZhangXi/Desktop/invoice_items.xlsx')
+    
+    items['商品明细']=''
+    for i in range(len(items)):
+        item_split=items.loc[i,'项目'].split("*")
+        if not item_split[1] is None:
+            items.loc[i,'项目']=item_split[1]
+        if not item_split[2] is None:
+            items.loc[i,'商品明细']=item_split[2]
+            
+            restauant=re.search('餐(饮|费)',item_split[2])
+            if restauant:
+                items.loc[i,'商品明细']='餐饮'
+        
+    items.to_excel('C:/Users/ZhangXi/Desktop/invoice_items.xlsx',index=False)
     return items
 
 a="0"
@@ -106,7 +121,7 @@ if a=="0":
     pass
 elif a=="1":
     temp_tab=grand_tab_gen()
-    temp_tab.to_excel('C:/Users/ZhangXi/Desktop/invoice_to_sql.xlsx',index=True)
+    temp_tab.to_excel('C:/Users/ZhangXi/Desktop/invoice_to_sql.xlsx',index=False)
     alert_tab = temp_tab[temp_tab["预警标志"] != ""]
 elif a=="2":
     test=length_test()
@@ -115,4 +130,4 @@ elif a=="3":
 elif a=="4":
     OAfile_update()
 elif a=="5":
-    items_detal=items_detail()
+    items_detail=items_detail()
