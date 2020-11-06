@@ -36,6 +36,7 @@ def iv_clean1(immediate_dict,c,test):
         items=re.search('(?<=发票号码：).*',text)
         if not items is None:
             immediate_dict['发票号码']=items.group(0)  #4.发票号码
+            print('正在处理第%s张发票，发票号码：%s' %(c,immediate_dict['发票号码']))
         items=re.search('(?<=开票日期：).*',text)
         if not items is None:
             immediate_dict['开票日期']=items.group(0)  #5.开票日期
@@ -109,7 +110,6 @@ def iv_clean1(immediate_dict,c,test):
             b=i
             if test.iloc[i,1]==c:
                 sht=divmod((b-a-1),8)  #发票明细的条目数和余数，出现余数则需要补足占用位
-                #print("第%s号凭证:(条目数,完备标识)%s" %(c,sht))
                 if sht[1]!=0:
                     mo=sht[0]+1        #mo是发票的条目数
                 else:
@@ -224,7 +224,6 @@ def iv_clean1(immediate_dict,c,test):
                     items_dict['单位']=e3
                     items_dict['数量']=e4
                     items_dict['单价']=e5
-                
     immediate_dict['发票明细']=items_dict
     #最后修正下代开发票信息
     if flag=="代":
@@ -236,7 +235,7 @@ def iv_clean1(immediate_dict,c,test):
     
     return df
 
-def iv_clean2(immediate_dict,test):
+def iv_clean2(immediate_dict,c,test):
     immediate_dict['发票种类']=test.iloc[3,0]             #0.发票种类
     immediate_dict['报销部门（参考）']=test.iloc[-1,0]
     for i in range(len(test)):
@@ -257,7 +256,7 @@ def iv_clean2(immediate_dict,test):
         items=re.search('(?<=发票号码：).*',text)
         if not items is None:
             immediate_dict['发票号码']=items.group(0)  #4.发票号码
-            
+            print('正在处理第%s张发票，发票号码：%s' %(c,immediate_dict['发票号码']))
         items=re.search('(?<=开票日期：).*',text)
         if not items is None:
             immediate_dict['开票日期']=items.group(0)  #5.开票日期
@@ -341,8 +340,9 @@ def inspector(rw_text,y,m):
         test=rw[rw['分组标志']==c]
         test=test.reset_index(drop=True)
         signal=test.iloc[3,0]
+        #print('处理第s%张凭证：' %(c))
         if '卷票' in signal:
-            df=iv_clean2(immediate_dict,test)
+            df=iv_clean2(immediate_dict,c,test)
             grand_tab=pd.concat([grand_tab,df],join='outer',ignore_index=True)
         else:
             df=iv_clean1(immediate_dict,c,test)
@@ -409,5 +409,4 @@ def inspector(rw_text,y,m):
                     instant_tab_list.append(grand_tab.loc[i,'校验码'])
             
     grand_tab=grand_tab[grand_tab['校验码'].isin(instant_tab_list)]
-    #grand_tab.drop_duplicates(subset='校验码',keep="first",inplace=True)
     return grand_tab

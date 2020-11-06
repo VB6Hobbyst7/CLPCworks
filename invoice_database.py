@@ -26,7 +26,6 @@ def grand_tab_gen():
             grand_tab.loc[index,'系统公文号']='作废'
     return grand_tab
 
-
 def OAfile_gen():             #导出数据库中公文号为空的表
     db = pymysql.connect("localhost","root","abcd1234",'clpc_ah')
     cursor = db.cursor()
@@ -42,7 +41,6 @@ def OAfile_gen():             #导出数据库中公文号为空的表
     cursor.close()
     db.close()
     return x_tab
-
 
 def OAfile_update():                        #更新系统公文号
     update_tab=pd.read_excel('C:/Users/ZhangXi/Desktop/update_tosql.xlsx',dtype={'发票号码':str}).to_dict(orient='list')
@@ -66,7 +64,7 @@ def length_test():
     items=pd.DataFrame()
     
     for i in range(len(test_tab)):
-        print('检查第%s张凭证，凭证号：%s' %(i,test_tab.loc[i,'发票号码']))
+        print('检查第 %s张凭证，凭证号：%s' %(i,test_tab.loc[i,'发票号码']))
         temp=eval(test_tab.loc[i,'发票明细'])
         temp1=pd.DataFrame(temp)
         items=pd.concat([items,temp1])
@@ -78,7 +76,7 @@ def items_detail():
     #打开MYSQL数据库导出流水单
     db = pymysql.connect("localhost","root","abcd1234",'clpc_ah')
     cursor = db.cursor()
-    sql=("select * from invoice;")
+    sql=("select * from invoice where 系统公文号 like 'B%';")
     cursor.execute(sql)
     temp=cursor.fetchall()
     columnDes = cursor.description #获取连接对象的描述信息
@@ -110,8 +108,8 @@ def items_detail():
             restauant=re.search('餐(饮|费)',item_split[2])
             if restauant:
                 items.loc[i,'商品明细']='餐饮'
-        
-    items.to_excel('C:/Users/ZhangXi/Desktop/invoice_items.xlsx',index=False)
+    data_rw.to_excel('C:/Users/ZhangXi/Desktop/已入账发票清单.xlsx',index=False)
+    items.to_excel('C:/Users/ZhangXi/Desktop/已入账商品明细.xlsx',index=False)
     return items
 
 a="0"
