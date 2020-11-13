@@ -3,6 +3,7 @@
 Created on Mon Feb  3 14:21:25 2020
 v1.0 has finished on 2020-2-18
 @author: zhangxi
+个养销售分析
 """
 
 import pandas as pd
@@ -18,13 +19,12 @@ def timer(func):
     @functools.wraps(func)
     def wrapper(*args,**kwargs):
         start_time = time.time()
-        func(*args)
+        func(*args,**kwargs)
         end_time = time.time()
         print('函数运行时间为：%.2fs' % (end_time - start_time))
-       
     return wrapper
 
-#取得完整的产品周期，预备制作账户
+#取得完整的产品周期，预备制作全寿命大账户
 def whole_date(pdtinfo):          
     date1=pdtinfo['CONTRACTENDDATE'].dropna()
     date1=pd.to_datetime(date1)
@@ -33,12 +33,12 @@ def whole_date(pdtinfo):
     st_date=date1[0]
     end_date=date1[len(date1)-1]
     if year_pdt_duedate>end_date:
-        end_date=year_pdt_duedate     #比较封闭型的最后到期日与年年盈产品的到期日孰大
+        end_date=year_pdt_duedate
     date_series=pd.date_range(start=st_date,end=end_date)
     date_series=date_series.strftime('%Y-%m-%d')
     return date_series
 
-#对个养表格记录进行汇总、清洗等处理
+#对个养销售记录表格记录进行汇总、清洗
 def tab_processing(pdtinfo):
     original=pd.DataFrame()
     for root,dirs,files,in os.walk(db_path,topdown=True):
@@ -74,7 +74,16 @@ def Acc_gen(raw_tab,path,a):
     f.loc[f['FUND_CODE']=='CL8012','FUND_ZBXS']=1/2
     f.loc[f['FUND_CODE']=='CL8013','FUND_CLASS']='年年盈'
     f.loc[f['FUND_CODE']=='CL8013','FUND_ZBXS']=1
-    f.loc[~f['FUND_CODE'].isin(['CL8010','CL8012','CL8013']),'FUND_CLASS']='封闭型'
+    f.loc[f['FUND_CODE']=='CL8016','FUND_CLASS']='广源366A'
+    f.loc[f['FUND_CODE']=='CL8016','FUND_ZBXS']=1
+    f.loc[f['FUND_CODE']=='CL8017','FUND_CLASS']='嘉年188'
+    f.loc[f['FUND_CODE']=='CL8017','FUND_ZBXS']=1/2
+    f.loc[f['FUND_CODE']=='CL8018','FUND_CLASS']='年年利'
+    f.loc[f['FUND_CODE']=='CL8018','FUND_ZBXS']=1
+    f.loc[f['FUND_CODE']=='CL8020','FUND_CLASS']='广园366'
+    f.loc[f['FUND_CODE']=='CL8020','FUND_ZBXS']=1
+    
+    f.loc[~f['FUND_CODE'].isin(['CL8010','CL8012','CL8013','CL8016','CL8017','CL8018','CL8020']),'FUND_CLASS']='封闭型'
     
     f.loc[f['AGENCY_NAME']=="徽商银行",'SALE_COMPANY_NAME_FEE']='徽商银行'
     f['performance']=f['ACK_MONEY']*f['FUND_ZBXS']/10000
@@ -214,15 +223,16 @@ db_path="E:/OneDrive/Python工作/CLPCworks/database"
 cardre_path="E:/OneDrive/Python工作/CLPCworks/"
 pdtinfo=pd.read_csv(cardre_path+"产品基本信息查询.csv")
 pdtinfo=pdtinfo.rename(columns=lambda x:x.replace('C_FUNDNAME','FUND_NAME'))
-pdtinfo=pdtinfo[3:]
+pdtinfo=pdtinfo[3:]    #前三条是月月盈、半年盈等，有重复
 
 whole_date=whole_date(pdtinfo)
 tab_refine=tab_processing(pdtinfo)
-
+tab_refine.to_csv(cardre_path+'grand_tab.csv')
 #account_raw=pd.DataFrame(index=whole_date)
 
 #类SQL查询
-tab_refine=tab_refine[tab_refine['COMPANY_REFER'].isin(['养老险公司'])]
+#tab_refine=tab_refine[tab_refine['COMPANY_REFER'].isin(['养老险公司'])]
+#tab_refine=tab_refine[tab_refine['FUND_ACCT'].isin(['CL1000063547','CL1000007334'])]
 #tab_refine=tab_refine.loc[tab_refine.CUSTNAME_REFER=="张曦"]
 #tab_refine=tab_refine[tab_refine['ACK_DATE']>'2019-12-31']
 #tab_refine=tab_refine[tab_refine['ACK_DATE']<'2019-06-30']

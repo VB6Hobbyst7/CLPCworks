@@ -7,6 +7,7 @@ Created on Mon Sep 14 12:50:15 2020
 
 import pandas as pd
 import re
+import time
 import pymysql
 
 def iv_clean1(immediate_dict,c,test):
@@ -72,7 +73,6 @@ def iv_clean1(immediate_dict,c,test):
         items=re.match('名称.*',text)    #此处用match
         if not items is None and flag=="销":
             immediate_dict['销售方名称']=test.iloc[i+1,0]  #9.销售方名称
-            
         items=re.search('.*纳税人识别号.*',text)
         if not items is None and flag=="销":
             immediate_dict['销售方纳税人识别号']=test.iloc[i+1,0]  #10.销售方纳税人识别号
@@ -240,7 +240,6 @@ def iv_clean2(immediate_dict,c,test):
     immediate_dict['报销部门（参考）']=test.iloc[-1,0]
     for i in range(len(test)):
         text=test.iloc[i,0]
-        
         items=re.search('(?<=查验次数：).*',text)
         if not items is None:
             immediate_dict['查验次数']=items.group(0)[:3]  #1.查验次数
@@ -275,7 +274,6 @@ def iv_clean2(immediate_dict,c,test):
         items=re.search('(?<=购买方单位：).*',text)
         if not items is None:
             immediate_dict['购买方名称']=items.group(0)  #9.购买方名称
-        
         items=re.search('(?<=购买方税号：).*',text)
         if not items is None:
             immediate_dict['购买方纳税人识别号']=items.group(0)  #9.购买方税号
@@ -283,7 +281,6 @@ def iv_clean2(immediate_dict,c,test):
         items=re.search('(?<=销售方名称：).*',text)
         if not items is None:
             immediate_dict['销售方名称']=items.group(0)  #10.销售方名称
-        
         items=re.search('(?<=销售方税号：).*',text)
         if not items is None:
             immediate_dict['销售方纳税人识别号']=items.group(0)  #11.销售方税号
@@ -305,7 +302,6 @@ def inspector(rw_text,y,m):
     rw=rw_text
     rw.columns=['描述文本']
     rw['分组标志']=""
-    
     grand_tab=pd.DataFrame()
     immediate_dict={}
     black_list=[]
@@ -315,6 +311,7 @@ def inspector(rw_text,y,m):
     dpt="未做标识"
     for i in range(len(rw)):    
         text=rw.iloc[i,0]
+        
         if text in departments_list:
             dpt=text    
         if re.search(".*发票查验明细",text):
@@ -340,19 +337,23 @@ def inspector(rw_text,y,m):
         test=rw[rw['分组标志']==c]
         test=test.reset_index(drop=True)
         signal=test.iloc[3,0]
-        #print('处理第s%张凭证：' %(c))
+        #print(test)
         if '卷票' in signal:
             df=iv_clean2(immediate_dict,c,test)
             grand_tab=pd.concat([grand_tab,df],join='outer',ignore_index=True)
+            
         else:
             df=iv_clean1(immediate_dict,c,test)
             grand_tab=pd.concat([grand_tab,df],join='outer',ignore_index=True)
-    
+
     #检查模块#
     grand_tab['预警标志']=""
     grand_tab['系统公文号']=""
     grand_tab['凭证号']=''
+    grand_tab['入库时间戳']=''
+    
     for index,row in grand_tab.iterrows():
+        #print(row)
         if row['购买方名称']!="中国人寿养老保险股份有限公司安徽省分公司":
             grand_tab.loc[index,'预警标志']=grand_tab.loc[index,'预警标志']+"公司名称错误"
         if row['购买方纳税人识别号']!="91340000MA2MUGNP93":
@@ -368,11 +369,15 @@ def inspector(rw_text,y,m):
         restautant=row['发票明细'].get("项目")
         
         if "餐饮" in restautant[0]:
-            compl='.*(餐|饮|酒|菜|饭|烧|烤|锅|鱼|渔|牛|羊|猪|狗|肠|卤|吃|食|饺|肉|粥|虾)'
+            compl='.*(餐|饮|酒|菜|饭|烧|烤|锅|鱼|渔|牛|鸡|羊|猪|狗|肠|卤|吃|食|饺|肉|粥|虾)'
             items=re.search(compl,row['销售方名称'])
             if items is None:       
                 grand_tab.loc[index,"预警标志"]=grand_tab.loc[index,'预警标志']+"销售方无餐饮店字样"
-                
+        
+        inspect_time=time.localtime(time.time())
+        timestamp=time.strftime("%Y-%m-%d %H:%M:%S",inspect_time)
+        grand_tab.loc[index,'入库时间戳']=timestamp
+        
     #调取数据库记录进行发票号码比对
     db = pymysql.connect("localhost","root","abcd1234",'clpc_ah')
     cursor = db.cursor()

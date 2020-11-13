@@ -4,10 +4,30 @@ Created on Fri Nov  6 08:56:39 2020
 
 @author: zhangxi
 """
-
+import pandas as pd
 import numpy as np
-np.random.seed(8)
+import os
+import datetime
+import time
+import functools
+import sys
 
-a=np.random.randint(10,size=(4))
 
-print(a,a[3])
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+
+# 创建对象的基类:
+Base = declarative_base()
+
+
+
+
+conn=create_engine("mysql+pymysql://clpc_ah:abcd1234@LocalDB/invoice?charset=uft8"
+                   ,echo=True)
+
+DbSession = sessionmaker(bind=conn)
+session = DbSession()
+
+
+invo=session.query(invoice)

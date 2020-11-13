@@ -33,17 +33,22 @@ def OAfile_gen():             #导出数据库中公文号为空的表
     sql="select 发票号码,价税合计,销售方名称,报销部门（参考） from invoice where 系统公文号 is null or 系统公文号=''"
     cursor.execute(sql)
     rows=cursor.fetchall()
-    x_tab=pd.DataFrame(index=rows,columns=['系统公文号'])
-    x_tab=x_tab.reset_index()
-    x_tab.sort_values(by='level_0',inplace=True)        
-    x_tab.rename(columns={'level_0':'发票号码','level_1':'价税合计','level_2':"销售方名称",'level_3':"报销部门（参考）"},inplace=True)
+    columnDes = cursor.description #获取连接对象的描述信息
+    columnNames = [columnDes[i][0] for i in range(len(columnDes))] #获取列名
+    x_tab= pd.DataFrame([list(i) for i in rows],columns=columnNames)
+    x_tab['系统公文号']=''
+    x_tab['价税合计']=x_tab['价税合计'].apply(pd.to_numeric)
+    x_tab.sort_values(by='价税合计',inplace=True)
     x_tab.to_excel('C:/Users/ZhangXi/Desktop/update_tosql.xlsx',index=False)
+    
     cursor.close()
     db.close()
     return x_tab
 
 def OAfile_update():                        #更新系统公文号
-    update_tab=pd.read_excel('C:/Users/ZhangXi/Desktop/update_tosql.xlsx',dtype={'发票号码':str}).to_dict(orient='list')
+    update_tab=pd.read_excel('C:/Users/ZhangXi/Desktop/update_tosql.xlsx',dtype={'发票号码':str})
+    update_tab.dropna(subset=['系统公文号'],inplace=True)
+    update_tab=update_tab.to_dict(orient='list')
     dict1=dict(zip(update_tab['发票号码'],update_tab['系统公文号']))
     dict2=dict(zip(update_tab['发票号码'],update_tab['报销部门（参考）']))
     db = pymysql.connect("localhost","root","abcd1234",'clpc_ah')
