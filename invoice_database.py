@@ -129,7 +129,7 @@ elif a=="1":
 elif a=="2":
     test=length_test()
 elif a=="3":
-    OAfile_gen()
+    load_tab=OAfile_gen()
 elif a=="4":
     OAfile_update()
 elif a=="5":

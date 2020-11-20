@@ -23,11 +23,12 @@ Base = declarative_base()
 
 
 
-conn=create_engine("mysql+pymysql://clpc_ah:abcd1234@LocalDB/invoice?charset=uft8"
+conn=create_engine("mysql+pymysql://clpc_ah:abcd1234@LocalDB/invoice?charset=uft-8"
                    ,echo=True)
 
 DbSession = sessionmaker(bind=conn)
 session = DbSession()
 
+session.query(invoice).all()
+session.close()
 
-invo=session.query(invoice)
