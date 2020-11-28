@@ -12,23 +12,21 @@ import time
 import functools
 import sys
 
-
+import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-# 创建对象的基类:
-Base = declarative_base()
+engine = create_engine(
+  "mysql+pymysql://root:abcd1234@localhost/clpc_ah?charset=utf8mb4", 
+  echo=True, 
+  max_overflow=5)
 
+l=engine.execute("select * from 入库记录;")
+#r=pd.DataFrame(l.fetchall())
+md=sqlalchemy.MetaData()
+table = sqlalchemy.Table('入库记录', md, autoload=True, autoload_with=engine)
+col=table.c
 
-
-
-conn=create_engine("mysql+pymysql://clpc_ah:abcd1234@LocalDB/invoice?charset=uft-8"
-                   ,echo=True)
-
-DbSession = sessionmaker(bind=conn)
-session = DbSession()
-
-session.query(invoice).all()
-session.close()
+rec=pd.DataFrame(l.fetchall(),columns=col)
 

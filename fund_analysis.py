@@ -45,9 +45,9 @@ def tab_processing(pdtinfo):
     for root,dirs,files,in os.walk(db_path,topdown=True):
         for i in files:
             temp=(os.path.join(root,i))
-            df1=pd.read_csv(temp)
+            df1=pd.read_csv(temp,converters={'ACK_DATE':str,'CONTRACTENDDATE':str,'REDEEM_DATE':str})
             original=pd.concat([original,df1],axis=0,join="outer")
-    
+
     if original.columns.contains('FUND_ACCT2'):
         original=original.drop(['FUND_ACCT2'],axis=1)
     original=original.merge(pdtinfo,how="left",on='FUND_NAME')
@@ -60,28 +60,26 @@ def tab_processing(pdtinfo):
     refine['DUE_DATE']=refine['CONTRACTENDDATE'].map(str)+refine['REDEEM_DATE'].map(str)
     refine['DUE_DATE']=refine['DUE_DATE'].str.replace('nan','')
     
-    refine["DUE_DATE"]=pd.to_datetime(refine["DUE_DATE"])
-    refine["ACK_DATE"]=pd.to_datetime(refine["ACK_DATE"])
-    
     refine['REFERID']=refine['REFERID'].str.upper()
     refine.dropna(how='all',inplace=True)
+    
     return refine
 
 @timer
 def Acc_gen(raw_tab,path,a):
     f=raw_tab
     f['FUND_CLASS']=f['FUND_NAME']
-    
+    #ZBXS:不同产品的折算系数
     f.loc[f['FUND_CODE']=='CL8010','FUND_CLASS']='月月盈'
-    f.loc[f['FUND_CODE']=='CL8010','FUND_ZBXS']=1/12
+    f.loc[f['FUND_CODE']=='CL8010','FUND_ZBXS']=1
     f.loc[f['FUND_CODE']=='CL8012','FUND_CLASS']='半年盈'
-    f.loc[f['FUND_CODE']=='CL8012','FUND_ZBXS']=1/2
+    f.loc[f['FUND_CODE']=='CL8012','FUND_ZBXS']=1
     f.loc[f['FUND_CODE']=='CL8013','FUND_CLASS']='年年盈'
     f.loc[f['FUND_CODE']=='CL8013','FUND_ZBXS']=1
     f.loc[f['FUND_CODE']=='CL8016','FUND_CLASS']='广源366A'
     f.loc[f['FUND_CODE']=='CL8016','FUND_ZBXS']=1
     f.loc[f['FUND_CODE']=='CL8017','FUND_CLASS']='嘉年188'
-    f.loc[f['FUND_CODE']=='CL8017','FUND_ZBXS']=1/2
+    f.loc[f['FUND_CODE']=='CL8017','FUND_ZBXS']=1
     f.loc[f['FUND_CODE']=='CL8018','FUND_CLASS']='年年利'
     f.loc[f['FUND_CODE']=='CL8018','FUND_ZBXS']=1
     f.loc[f['FUND_CODE']=='CL8020','FUND_CLASS']='广园366'
@@ -183,7 +181,6 @@ def Acc_gen(raw_tab,path,a):
             
                 Acct_prs=pd.concat([Acct_prs,acct_temp],axis=0,join='outer')
             
-            #Acct_prs['日期']=Acct_prs['日期'].map(lambda x:x.strftime("%Y/%m/%d"))
             Acct_prs.fillna(value=0,inplace=True)
             Acct_prs.sort_values(by=["日期"],ascending=[True],inplace=True)
             Acct_prs.reset_index(inplace=True,drop=True)
@@ -257,17 +254,19 @@ columnNames = [columnDes[i][0] for i in range(len(columnDes))] #获取列名
 data_from_mysql= pd.DataFrame([list(i) for i in temp],columns=columnNames)
 db.close
 tab_refine=tab_refine.append(data_from_mysql,ignore_index=True)
+#tab_refine['ACK_DATE']=tab_refine['ACK_DATE'].astype(str)
+
 ##########################################
 
 
 
 
 #类SQL查询
-#tab_refine=tab_refine[tab_refine['COMPANY_REFER'].isin(['养老险公司'])]
+tab_refine=tab_refine[tab_refine['COMPANY_REFER'].isin(['养老险公司'])]
 #tab_refine=tab_refine[tab_refine['FUND_ACCT'].isin(['CL1000063547','CL1000007334'])]
 #tab_refine=tab_refine.loc[tab_refine.CUSTNAME_REFER=="张曦"]
-tab_refine=tab_refine[tab_refine['ACK_DATE']<'2016-10-01']
-#tab_refine=tab_refine[tab_refine['ACK_DATE']<'2020-01-01']
+#tab_refine=tab_refine[tab_refine['ACK_DATE']<'2016-10-01']
+#tab_refine=tab_refine[tab_refine['ACK_DATE']>'2020-10-31']
 
 
 #debug

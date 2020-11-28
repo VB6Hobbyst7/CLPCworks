@@ -173,7 +173,15 @@ def iv_clean1(immediate_dict,c,test):
                                 #此处应该有一个本数值和发票总价的匹配控制
                                 e_t5=context[0]
                         elif len(context)==2:
-                            print("注意context=2的模块没写:",context)
+                            #print("注意context=2的模块没写:",context)
+                            #20201124,按['常规','1162.26]的模式组织代码
+                            items=re.search('(-)?(\d*)(\.\d*)?',context[0])
+                            if not items is None:
+                                if len(context[0])==1:
+                                    e_t3=context[0]
+                                else:
+                                    e_t2=context[0]
+                                
                         elif len(context)==3:
                             #三个要素都是数字
                             compl='(-)?(\d*)(\.\d*)?'
