@@ -22,11 +22,16 @@ engine = create_engine(
   echo=True, 
   max_overflow=5)
 
-l=engine.execute("select * from 入库记录;")
+l=engine.execute("select * from invoice;")
 #r=pd.DataFrame(l.fetchall())
 md=sqlalchemy.MetaData()
-table = sqlalchemy.Table('入库记录', md, autoload=True, autoload_with=engine)
+table = sqlalchemy.Table('invoice', md, autoload=True, autoload_with=engine)
 col=table.c
 
 rec=pd.DataFrame(l.fetchall(),columns=col)
 
+Base=declarative_base()
+
+class User(Base):
+    __tablename__='发票入库记录'
+    id=column(Integer,Sequence())

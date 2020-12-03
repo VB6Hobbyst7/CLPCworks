@@ -228,7 +228,7 @@ else:
     print("BE CAREFUL:请输入合法的账户类型代码")
     sys.exit()
 #-----------------------------------------------------------
-db_path="E:/OneDrive/Python工作/CLPCworks/database"
+db_path="G:/pdt/database"
 cardre_path="E:/OneDrive/Python工作/CLPCworks/"
 save_path='g:/pdt/'
 pdtinfo=pd.read_csv(cardre_path+"产品基本信息查询.csv")
@@ -254,7 +254,6 @@ columnNames = [columnDes[i][0] for i in range(len(columnDes))] #获取列名
 data_from_mysql= pd.DataFrame([list(i) for i in temp],columns=columnNames)
 db.close
 tab_refine=tab_refine.append(data_from_mysql,ignore_index=True)
-#tab_refine['ACK_DATE']=tab_refine['ACK_DATE'].astype(str)
 
 ##########################################
 
@@ -266,12 +265,7 @@ tab_refine=tab_refine[tab_refine['COMPANY_REFER'].isin(['养老险公司'])]
 #tab_refine=tab_refine[tab_refine['FUND_ACCT'].isin(['CL1000063547','CL1000007334'])]
 #tab_refine=tab_refine.loc[tab_refine.CUSTNAME_REFER=="张曦"]
 #tab_refine=tab_refine[tab_refine['ACK_DATE']<'2016-10-01']
-#tab_refine=tab_refine[tab_refine['ACK_DATE']>'2020-10-31']
-
-
-#debug
-#debug_print=tab_refine.loc[tab_refine.FUND_ACCT=='abnoraml_acct']
-#debug_print.to_excel(cardre_path+'debug_print.xlsx')
+tab_refine=tab_refine[tab_refine['ACK_DATE']>'2019-12-31']
 
 to_anal=tab_refine
 to_anal.to_excel(save_path+'analyse_refine_tab.xlsx')
