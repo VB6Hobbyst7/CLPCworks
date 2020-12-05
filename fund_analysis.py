@@ -265,7 +265,7 @@ tab_refine=tab_refine[tab_refine['COMPANY_REFER'].isin(['养老险公司'])]
 #tab_refine=tab_refine[tab_refine['FUND_ACCT'].isin(['CL1000063547','CL1000007334'])]
 #tab_refine=tab_refine.loc[tab_refine.CUSTNAME_REFER=="张曦"]
 #tab_refine=tab_refine[tab_refine['ACK_DATE']<'2016-10-01']
-tab_refine=tab_refine[tab_refine['ACK_DATE']>'2019-12-31']
+tab_refine=tab_refine[tab_refine['ACK_DATE']>'2020-10-31']
 
 to_anal=tab_refine
 to_anal.to_excel(save_path+'analyse_refine_tab.xlsx')

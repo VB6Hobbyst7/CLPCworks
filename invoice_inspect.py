@@ -359,9 +359,11 @@ def inspector(rw_text,y,m):
     grand_tab['系统公文号']=""
     grand_tab['凭证号']=''
     grand_tab['入库时间戳']=''
+    grand_tab['餐饮标志']=''
     
+    #对单张发票进行检查
     for index,row in grand_tab.iterrows():
-        #print(row)
+        
         if row['购买方名称']!="中国人寿养老保险股份有限公司安徽省分公司":
             grand_tab.loc[index,'预警标志']=grand_tab.loc[index,'预警标志']+"公司名称错误"
         if row['购买方纳税人识别号']!="91340000MA2MUGNP93":
@@ -377,16 +379,19 @@ def inspector(rw_text,y,m):
         restautant=row['发票明细'].get("项目")
         
         if "餐饮" in restautant[0]:
+            grand_tab.loc[index,"餐饮标志"]=1
             compl='.*(餐|饮|酒|菜|饭|烧|烤|锅|鱼|渔|牛|鸡|羊|猪|狗|肠|卤|吃|食|饺|肉|粥|虾)'
             items=re.search(compl,row['销售方名称'])
             if items is None:       
                 grand_tab.loc[index,"预警标志"]=grand_tab.loc[index,'预警标志']+"销售方无餐饮店字样"
-        
-        inspect_time=time.localtime(time.time())
-        timestamp=time.strftime("%Y-%m-%d %H:%M:%S",inspect_time)
-        grand_tab.loc[index,'入库时间戳']=timestamp
-        
-    #调取数据库记录进行发票号码比对
+                
+    #准备即时发票中的餐饮票df，做好同一天多张发票数检查的准备工作
+    restautant=grand_tab[grand_tab['餐饮标志']==1]
+    restautant.reset_index(drop=True,inplace=True)
+    
+    grand_tab['餐饮标志']=2    #借用餐饮标志充当辅助列，2是本次检查的批次标志
+    
+    #调取数据库中的发票记录进行联查
     db = pymysql.connect("localhost","root","abcd1234",'clpc_ah')
     cursor = db.cursor()
     sql="select * from invoice"
@@ -398,9 +403,14 @@ def inspector(rw_text,y,m):
     cursor.close()
     db.close()
     db_df['预警标志'].replace(to_replace=[None],value="",inplace=True)
-
-    instant_tab_list=grand_tab['校验码'].tolist()
+    db_df['餐饮标志']=3       #借用餐饮标志充当辅助列，3是数据库已有的批次标志
+    instant_tab_list=grand_tab['校验码'].tolist() #校验码是数据库主键，入库主键列表
+    drop_duplicated_list=[]
+    #与数据库合并形成大表
     grand_tab=pd.concat([grand_tab,db_df],axis=0,ignore_index=True,join='outer')
+    
+    grand_tab_copy=grand_tab.copy()  #为查多张发票做准备
+    grand_tab_copy.drop_duplicates(subset='校验码',inplace=True)
     
     #链接数据库对发票号码进行号码比对
     for i in range(len(grand_tab)):
@@ -409,7 +419,12 @@ def inspector(rw_text,y,m):
         for j in range(i+1,len(grand_tab)):
             dst2=grand_tab.loc[j,'发票号码']
             
-            if dst1[:-1]==dst2[:-1] and abs(int(dst1[-1])-int(dst2[-1]))<2:
+            if dst1==dst2:           #多录发票记录去重
+                drop_duplicated_list.append(grand_tab.loc[i,'校验码'])
+                instant_tab_list.remove(grand_tab.loc[i,'校验码'])
+                
+            #发票连号
+            if dst1[:-1]==dst2[:-1] and abs(int(dst1[-1])-int(dst2[-1]))==1:
                 grand_tab.loc[i,'预警标志']=grand_tab.loc[i,'预警标志']+"(%s)" % grand_tab.loc[j,'发票号码']
                 grand_tab.loc[j,'预警标志']=grand_tab.loc[j,'预警标志']+"(%s)" % grand_tab.loc[i,'发票号码']
                 
@@ -420,6 +435,56 @@ def inspector(rw_text,y,m):
                     instant_tab_list.append(grand_tab.loc[j,'校验码'])
                 elif (not(x) and y):
                     instant_tab_list.append(grand_tab.loc[i,'校验码'])
-            
+    
+    drop_tab=grand_tab[grand_tab['校验码'].isin(drop_duplicated_list)]
+    drop_tab.sort_values(by='发票号码',ascending=True,inplace=True)
+    
+    print(drop_tab[['报销部门（参考）','开票日期','发票号码','价税合计','入库时间戳']])
+    print('：去除数据库中已有重复记录的发票%s张' %len(drop_tab))
+    
     grand_tab=grand_tab[grand_tab['校验码'].isin(instant_tab_list)]
+    
+    #2020年12月增加新功能
+    #链接数据库对拟入库餐饮票的部门日期进行检查,对某日某部超过3张餐票发出预警
+    restautant.drop_duplicates(subset=['开票日期','报销部门（参考）'],inplace=True)
+    exceed_df=pd.DataFrame()
+    
+    for i in range(len(restautant)):    #restautant:从待检查tab中切出的餐票表
+        invoice_date=restautant.loc[i,'开票日期']
+        dptmt=restautant.loc[i,'报销部门（参考）']
+        invoice_number=restautant.loc[i,'发票号码']
+        
+        #restautant_times 待检查的同天同部门的餐票表中在grand_tab中的所有记录
+        grand_tab_copy['发票明细']=grand_tab_copy['发票明细'].apply(str)
+        restautant_times=grand_tab_copy[(grand_tab_copy['开票日期']==invoice_date)&
+                                   (grand_tab_copy['报销部门（参考）']==dptmt)&
+                                   (grand_tab_copy['发票明细'].str.contains('餐饮'))]
+        restautant_times.reset_index(drop=True,inplace=True)
+        
+        #某日某部门当天的餐饮票超过3张
+        if len(restautant_times)>3: 
+            alert_list=[]
+            for j in range(len(restautant_times)):
+                if restautant_times.loc[j,'系统公文号']!='作废':
+                    alert_list.append(restautant_times.loc[j,'发票号码'])
+        
+            if len(alert_list)>3:   #去除作废票，当天的餐饮票超过3张
+                exceed_df=pd.concat([exceed_df,restautant_times],axis=0,ignore_index=True,join='outer')
+                
+                for index,row in exceed_df.iterrows():
+                    if row['发票号码'] in alert_list:
+                        exceed_df.loc[index,'预警标志']="当日该部门餐票超过3张,发票号：%s" %(alert_list)
+                        c=grand_tab[grand_tab.发票号码==row['发票号码']].index.tolist()
+                        for k in range(len(c)):
+                            grand_tab.loc[c[k],'预警标志']=grand_tab.loc[c[k],'预警标志']+"当日该部门餐票超过3张,发票号：%s" %(alert_list)
+                
+                exceed_df=exceed_df[['开票日期','报销部门（参考）','发票号码','销售方名称','价税合计','预警标志','系统公文号','入库时间戳']]
+                exceed_df.sort_values(by=['报销部门（参考）','开票日期'],ascending=True,inplace=True)
+                exceed_df.to_excel('C:/Users/ZhangXi/Desktop/某日某部餐票超过3次.xlsx')
+                
+    #加注处理时间戳
+    stamp_time=time.localtime(time.time())
+    timestamp=time.strftime("%Y-%m-%d %H:%M:%S",stamp_time)
+    grand_tab['入库时间戳']=timestamp
+    
     return grand_tab

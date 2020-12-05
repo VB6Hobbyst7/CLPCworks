@@ -91,6 +91,7 @@ def items_detail():
     
     for index,row in data_rw.iterrows():
         temp=eval(row['发票明细'])
+        temp['发票号码']=row['发票号码']
         temp['开票日期']=row['开票日期']
         temp['价税合计']=row['价税合计']
         temp['报销部门（参考）']=row['报销部门（参考）']
@@ -124,6 +125,10 @@ if a=="0":
     pass
 elif a=="1":
     temp_tab=grand_tab_gen()
+    #辅助列借用餐饮标志
+    temp_tab=temp_tab[temp_tab['餐饮标志'].isin([2])]
+    temp_tab.drop('餐饮标志',axis=1,inplace=True)
+    
     temp_tab.to_excel('C:/Users/ZhangXi/Desktop/invoice_to_sql.xlsx',index=False)
     alert_tab = temp_tab[temp_tab["预警标志"] != ""]
 elif a=="2":
