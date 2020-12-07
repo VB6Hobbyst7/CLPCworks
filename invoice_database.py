@@ -11,8 +11,10 @@ from invoice_inspect import inspector
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import re
+from gadgets import timer
 
 #检查发票信息，生成导入数据库表
+
 def grand_tab_gen():
     rw_text=pd.read_csv('E:/OneDrive/国寿养老工作/invoice.txt',error_bad_lines=False)
     y="2020"
@@ -77,6 +79,7 @@ def length_test():
     print('检查完成')
     return items
 
+@timer
 def items_detail():
     #打开MYSQL数据库导出流水单
     db = pymysql.connect("localhost","root","abcd1234",'clpc_ah')

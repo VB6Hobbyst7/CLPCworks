@@ -9,6 +9,7 @@ import pandas as pd
 import re
 import time
 import pymysql
+from gadgets import timer
 
 def iv_clean1(immediate_dict,c,test):
 #############类专票的处理块#####################
@@ -439,6 +440,7 @@ def inspector(rw_text,y,m):
     drop_tab=grand_tab[grand_tab['校验码'].isin(drop_duplicated_list)]
     drop_tab.sort_values(by='发票号码',ascending=True,inplace=True)
     
+    print('====================去重列表====================')
     print(drop_tab[['报销部门（参考）','开票日期','发票号码','价税合计','入库时间戳']])
     print('：去除数据库中已有重复记录的发票%s张' %len(drop_tab))
     

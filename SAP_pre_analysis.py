@@ -9,8 +9,9 @@ import pandas as pd
 import numpy as np
 import re
 
-origin=pd.read_excel('E:/OneDrive/国寿养老工作/财务部工作/财务分析/财务收入分析/财务分析数据底稿0807.xlsm',sheet_name='数据源')
-origin['业务摘要']=origin['业务摘要'].astype("str")
+origin=pd.read_excel('E:/OneDrive/国寿养老工作/财务部工作/财务分析/财务收入分析/三栏账数据源.xlsx'
+                     ,sheet_name='数据源',dtype={'日期':str,'业务摘要':str})
+#origin['业务摘要']=origin['业务摘要'].astype("str")
 AccCode={}
 
 def reduct(nm):#对企业年金收入-受托-单一计划客户名称进行精简，可能需要定期维护
@@ -32,9 +33,14 @@ def reduct(nm):#对企业年金收入-受托-单一计划客户名称进行精�
         nm='省联社'
     
     return nm
+#代理费科目切片
+agent_fee=origin[origin.科目代码==6421000000]
+
 
 for index,row in origin.iterrows():
     #生成科目代码和科目名称的字典
+    origin.loc[index,'日期']=origin.loc[index,'日期'][:10]
+
     if row[0] not in AccCode.keys():
         temp='%s-%s-%s' %(row['一级科目'],row['二级科目'],row['三级科目'])
         temp=temp.replace('-nan','')
@@ -47,7 +53,7 @@ for index,row in origin.iterrows():
         filenum=re.search('单据号:',txt_temp)
         filenum=txt_temp[filenum.span()[1]:]
         origin.iloc[index,14]=filenum
-    
+    print(index,txt_temp)
         
     if row['科目代码']==6041010000:#职业年金收入-受托费
         nm=txt_temp[4:-9]
@@ -164,12 +170,27 @@ for index,row in origin.iterrows():
         else:
             origin.iloc[index,3]='个养'
             
+    if row['科目代码']==6421000000: #手续费
+        
+        if re.search('寿',txt_temp):
+            origin.loc[index,'可辨认的客户名称']='寿险'
+        if re.search('财.?险',txt_temp):
+            origin.loc[index,'可辨认的客户名称']='财险'
+        if re.search('手续费',txt_temp):
+            origin.loc[index,'可辨认的受托/账管客户类型']='手续费'
+        if re.search('推动',txt_temp) or re.search('奖励',txt_temp):
+            origin.loc[index,'可辨认的受托/账管客户类型']='推动奖励'
+            if origin.loc[index,'可辨认的客户名称']=='':
+                origin.loc[index,'可辨认的客户名称']='寿险'
+        #if re.search('冲',txt_temp):
+            #_num=re.search('\d+',txt_temp).group(0)
+           # print(txt_temp,file_num)
 
 
 origin['科目余额计算列']=origin["贷方"]-origin["借方"]
 
 dbp=origin.loc[origin.科目代码==6051020500]
-origin.to_excel('E:/OneDrive/国寿养老工作/财务部工作/财务分析/财务收入分析/财务分析数据底稿0807.xlsm',sheet_name='数据源')
+origin.to_excel('E:/OneDrive/国寿养老工作/财务部工作/财务分析/财务收入分析/三栏账数据源.xlsx',sheet_name='数据源',index=False)
         
 
 

@@ -13,6 +13,8 @@ import time
 import functools
 import sys
 
+from gadgets import timer
+'''
 db = pymysql.connect("localhost","root","abcd1234",'clpc_ah')
 cursor = db.cursor()
 sql=("SELECT * from potted_funds_records UNION select * from open_funds_records;")
@@ -22,3 +24,9 @@ temp=cursor.fetchall()
 columnDes = cursor.description #获取连接对象的描述信息
 columnNames = [columnDes[i][0] for i in range(len(columnDes))] #获取列名
 data_rw= pd.DataFrame([list(i) for i in temp],columns=columnNames)
+'''
+@timer
+def a():
+    print([i for i in range(100000000)])
+    
+a()
