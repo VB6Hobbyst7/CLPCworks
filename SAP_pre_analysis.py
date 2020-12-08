@@ -33,7 +33,6 @@ def reduct(nm):#对企业年金收入-受托-单一计划客户名称进行精�
         nm='安徽邮政'
     elif nm=='农村信用社':
         nm='省联社'
-    
     return nm
 
 #银行存款流水记录，收付实现制的预处理
@@ -58,26 +57,28 @@ for index,row in origin.iterrows():
     if re.search('单据号:',txt_temp):
         filenum=re.search('单据号:',txt_temp)
         filenum=txt_temp[filenum.span()[1]:]
-        origin.iloc[index,14]=filenum
+        origin.loc[index,'公文系统单据号']=filenum
     
         
     if row['科目代码']==6041010000:#职业年金收入-受托费
         nm=txt_temp[4:-9]
-        origin.iloc[index,-2]=nm
+        origin.loc[index,'可辨认的客户名称']=nm
+        origin.loc[index,'可辨认的受托/账管客户类型']="职业年金受托"
         
         if re.search('\d(.*)月',txt_temp):
             dt=re.search('\d(.*)月',txt_temp)
             dt=dt.group(0)[:-1]
             if dt=='13':
                 dt='12'              #SAP会出现虚拟的13月，对年度财务数据进行调整
-            origin.iloc[index,-6]=dt
+            origin.loc[index,'月度']=dt
     
     if row['科目代码']==6041020000:#职业年金收入-投管
         nm=txt_temp
         if re.search('职业年金--(.*)|业绩报酬--(.*)',txt_temp):
             nm=re.search('职业年金--(.*)|业绩报酬--(.*)',txt_temp)
             nm=nm.group(0)[6:]
-            origin.iloc[index,-2]=nm
+            origin.loc[index,'可辨认的客户名称']=nm
+            origin.loc[index,'可辨认的受托/账管客户类型']="职业年金投管"
         if re.search('业绩报酬',txt_temp):
             origin.iloc[index,3]='业绩报酬'
         else:
@@ -121,11 +122,11 @@ for index,row in origin.iterrows():
             if nm_res=="铜陵有色金属集团控股":
                 nm_res="铜陵有色"
             
-            origin.iloc[index,-2]=nm_res
+            origin.loc[index,'可辨认的客户名称']=nm_res
             if nm_res in ['铜陵有色','叉车集团','古井集团','新华传媒']:
-                origin.iloc[index,-1]="单一计划"
+                origin.loc[index,'可辨认的受托/账管客户类型']="单一计划"
             else:
-                origin.iloc[index,-1]="集合计划"
+                origin.loc[index,'可辨认的受托/账管客户类型']="集合计划"
             
     if row['科目代码']==6039010000:#企业年金收入-受托
         nm_pattern=re.compile('(?<=确认应收).*(?=受托费)')
@@ -141,18 +142,18 @@ for index,row in origin.iterrows():
             if not nm_hd is None:
                 slc=nm_hd.span()[1]
                 nm_res=nm_raw[slc:]
-                origin.iloc[index,-2]=reduct(nm_res)
-            origin.iloc[index,-1]='单一计划'
+                origin.loc[index,'可辨认的客户名称']=reduct(nm_res)
+            origin.loc[index,'可辨认的受托/账管客户类型']='单一计划'
             #处理集合计划
             nm_clt=re.compile('.*(?=企业年金集合计划)')
             nm_clt_pln=nm_clt.search(nm_raw)
             if not nm_clt_pln is None:
                 nm_raw=nm_clt_pln.group(0)
                 nm_res=nm_raw[2:]
-                origin.iloc[index,-2]=nm_res
-                origin.iloc[index,-1]="集合计划"
+                origin.loc[index,'可辨认的客户名称']=nm_res
+                origin.loc[index,'可辨认的受托/账管客户类型']="集合计划"
         else:
-            origin.iloc[index,-1]='税金及其他调整'
+            origin.loc[index,'可辨认的受托/账管客户类型']='税金及其他调整'
     
         #单一计划受托财产分析
         nm_tail=re.compile('.*(?=企业年金计划受托财产)')
@@ -164,11 +165,11 @@ for index,row in origin.iterrows():
             if not nm_hd is None:
                 slc=nm_hd.span()[0]
                 nm_res=nm_raw[slc+1:]
-                origin.iloc[index,-2]=reduct(nm_res)
+                origin.loc[index,'可辨认的客户名称']=reduct(nm_res)
             else:                       #还有几行不带银行的倒霉玩意
                 nm_res=nm_raw
-                origin.iloc[index,-2]=reduct(nm_res)
-            origin.iloc[index,-1]='单一计划'
+                origin.loc[index,'可辨认的客户名称']=reduct(nm_res)
+            origin.loc[index,'可辨认的受托/账管客户类型']='单一计划'
     
     if row['科目代码']==6051020500: #其他业务收入-养老保障
         if '团体' in txt_temp:
@@ -180,9 +181,9 @@ for index,row in origin.iterrows():
         #业管费-手续费支出/应付款-应付手续费
         
         if re.search('寿',txt_temp):
-            origin.loc[index,'可辨认的客户名称']='寿险'
+            origin.loc[index,'可辨认的成本中心']='寿险'
         if re.search('财.?险',txt_temp):
-            origin.loc[index,'可辨认的客户名称']='财险'
+            origin.loc[index,'可辨认的成本中心']='财险'
         if re.search('手续费',txt_temp):
             origin.loc[index,'可辨认的受托/账管客户类型']='手续费'
         if re.search('推动',txt_temp) or re.search('奖励',txt_temp):
@@ -190,12 +191,13 @@ for index,row in origin.iterrows():
         
         if origin.loc[index,'可辨认的受托/账管客户类型']=='推动奖励' or\
            origin.loc[index,'可辨认的受托/账管客户类型']=='手续费'and\
-           pd.isnull(origin.loc[index,'可辨认的客户名称'])==True:
-           origin.loc[index,'可辨认的客户名称']="寿险"
+           pd.isnull(origin.loc[index,'可辨认的成本中心'])==True:
+           origin.loc[index,'可辨认的成本中心']="寿险"
         
+        #现金账索引出实际支付的手续费
         if str(row['年度'])+str(row['凭证号']) in bank_journal:
-            origin.loc[index,'可辨认的成本中心']='实际支付的手续费'
-       
+            origin.loc[index,'现金流量标注']='实际支付的手续费'
+        
 origin['科目余额计算列']=origin["贷方"]-origin["借方"]
 
 dbp=origin.loc[origin.科目代码==6051020500]

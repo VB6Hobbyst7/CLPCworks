@@ -446,9 +446,10 @@ def inspector(rw_text,y,m):
     
     grand_tab=grand_tab[grand_tab['校验码'].isin(instant_tab_list)]
     
-    #2020年12月增加新功能
     #链接数据库对拟入库餐饮票的部门日期进行检查,对某日某部超过3张餐票发出预警
+    #首先按照开票日期、报销部门对本批查验的发票进行去重，同部门同天保留一张发票
     restautant.drop_duplicates(subset=['开票日期','报销部门（参考）'],inplace=True)
+    restautant.reset_index(drop=True,inplace=True)
     exceed_df=pd.DataFrame()
     
     for i in range(len(restautant)):    #restautant:从待检查tab中切出的餐票表
@@ -456,13 +457,13 @@ def inspector(rw_text,y,m):
         dptmt=restautant.loc[i,'报销部门（参考）']
         invoice_number=restautant.loc[i,'发票号码']
         
-        #restautant_times 待检查的同天同部门的餐票表中在grand_tab中的所有记录
+        #restautant_times:待检查的同天同部门的餐票表中在grand_tab_copy中的所有记录
         grand_tab_copy['发票明细']=grand_tab_copy['发票明细'].apply(str)
         restautant_times=grand_tab_copy[(grand_tab_copy['开票日期']==invoice_date)&
                                    (grand_tab_copy['报销部门（参考）']==dptmt)&
                                    (grand_tab_copy['发票明细'].str.contains('餐饮'))]
         restautant_times.reset_index(drop=True,inplace=True)
-        
+    
         #某日某部门当天的餐饮票超过3张
         if len(restautant_times)>3: 
             alert_list=[]
@@ -483,7 +484,7 @@ def inspector(rw_text,y,m):
                 exceed_df=exceed_df[['开票日期','报销部门（参考）','发票号码','销售方名称','价税合计','预警标志','系统公文号','入库时间戳']]
                 exceed_df.sort_values(by=['报销部门（参考）','开票日期'],ascending=True,inplace=True)
                 exceed_df.to_excel('C:/Users/ZhangXi/Desktop/某日某部餐票超过3次.xlsx')
-                
+    
     #加注处理时间戳
     stamp_time=time.localtime(time.time())
     timestamp=time.strftime("%Y-%m-%d %H:%M:%S",stamp_time)

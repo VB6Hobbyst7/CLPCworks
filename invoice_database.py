@@ -28,6 +28,7 @@ def grand_tab_gen():
             grand_tab.loc[index,'系统公文号']='作废'
     return grand_tab
 
+@timer
 def OAfile_gen():             #导出数据库中公文号为空的表
     db = pymysql.connect("localhost","root","abcd1234",'clpc_ah')
     cursor = db.cursor()
@@ -47,6 +48,7 @@ def OAfile_gen():             #导出数据库中公文号为空的表
     db.close()
     return x_tab
 
+@timer
 def OAfile_update():                        #更新系统公文号
     update_tab=pd.read_excel('C:/Users/ZhangXi/Desktop/update_tosql.xlsx',dtype={'发票号码':str})
     update_tab.dropna(subset=['系统公文号'],inplace=True)
