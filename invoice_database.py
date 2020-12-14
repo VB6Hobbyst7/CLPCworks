@@ -4,7 +4,7 @@ Created on Fri Sep 25 13:57:18 2020
 
 @author: zhangxi
 """
-
+import os
 import pymysql
 import pandas as pd
 from invoice_inspect import inspector
@@ -12,8 +12,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import re
 from gadgets import timer
+import time
 
 #检查发票信息，生成导入数据库表
+
 
 def grand_tab_gen():
     rw_text=pd.read_csv('E:/OneDrive/国寿养老工作/invoice.txt',error_bad_lines=False)
@@ -33,7 +35,7 @@ def OAfile_gen():             #导出数据库中公文号为空的表
     db = pymysql.connect("localhost","root","abcd1234",'clpc_ah')
     cursor = db.cursor()
     
-    sql="select 发票号码,价税合计,销售方名称,报销部门（参考） from invoice where 系统公文号 is null or 系统公文号=''"
+    sql="select 发票号码,价税合计,销售方名称,报销部门（参考）,入库时间戳,发票明细 from invoice where 系统公文号 is null or 系统公文号=''"
     cursor.execute(sql)
     rows=cursor.fetchall()
     columnDes = cursor.description #获取连接对象的描述信息
@@ -42,6 +44,14 @@ def OAfile_gen():             #导出数据库中公文号为空的表
     x_tab['系统公文号']=''
     x_tab['价税合计']=x_tab['价税合计'].apply(pd.to_numeric)
     x_tab.sort_values(by='价税合计',inplace=True)
+    for index,row in x_tab.iterrows():
+        if '餐饮' in row['发票明细']:
+            x_tab.loc[index,'发票明细']='招待费-餐饮'
+        elif '酒' in row['发票明细']:
+            x_tab.loc[index,'发票明细']='招待费-酒'
+        else:
+            x_tab.loc[index,'发票明细']=''
+    x_tab=x_tab[['入库时间戳','发票明细','发票号码','销售方名称','价税合计','报销部门（参考）','系统公文号']]
     x_tab.to_excel('C:/Users/ZhangXi/Desktop/update_tosql.xlsx',index=False)
     
     cursor.close()
@@ -50,24 +60,35 @@ def OAfile_gen():             #导出数据库中公文号为空的表
 
 @timer
 def OAfile_update():                        #更新系统公文号
+    #付款时间戳
+    stamp_time=time.localtime(time.time())
+    timestamp=(time.strftime("%Y-%m-%d %H:%M:%S",stamp_time))
     update_tab=pd.read_excel('C:/Users/ZhangXi/Desktop/update_tosql.xlsx',dtype={'发票号码':str})
     update_tab.dropna(subset=['系统公文号'],inplace=True)
+    update_tab['付款时间戳']=timestamp
+    
     update_tab=update_tab.to_dict(orient='list')
     dict1=dict(zip(update_tab['发票号码'],update_tab['系统公文号']))
     dict2=dict(zip(update_tab['发票号码'],update_tab['报销部门（参考）']))
+    dict3=dict(zip(update_tab['发票号码'],update_tab['付款时间戳']))
+    
     db = pymysql.connect("localhost","root","abcd1234",'clpc_ah')
     cursor = db.cursor()
     temp1=update_tab['发票号码']
     sql1=("UPDATE invoice set 系统公文号=%s where 发票号码=%s;")
     sql2=("UPDATE invoice set 报销部门（参考）=%s where 发票号码=%s;")
+    sql3=("UPDATE invoice set 付款时间戳=%s where 发票号码=%s;")
     
     for j in range(len(temp1)):
         cursor.execute(sql1,(dict1.get(temp1[j]),temp1[j]))
         cursor.execute(sql2,(dict2.get(temp1[j]),temp1[j]))
+        cursor.execute(sql3,(dict3.get(temp1[j]),temp1[j]))
     db.commit()
     cursor.close()
     db.close()
+    os.remove('C:/Users/ZhangXi/Desktop/update_tosql.xlsx')
 
+@timer
 def length_test():
     test_tab=pd.read_excel('C:/Users/ZhangXi/Desktop/invoice_to_sql.xlsx',dtype={'发票号码':str})
     items=pd.DataFrame()

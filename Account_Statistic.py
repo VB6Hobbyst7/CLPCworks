@@ -33,7 +33,7 @@ for index,row in refine_tab.iterrows():
 department=set(refine_tab['经办部门'])
 #refine_tab=refine_tab[refine_tab['部门'].isin(['职业年金部','业务运营部'])]
 piovt_tab=refine_tab.pivot_table('贷方',index=['年','月'],columns=['对方科目'],aggfunc='sum',margins=True)
-
+piovt_tab.to_excel("g:\p.xlsx")
 #ref=refine_tab.set_index('流转文件号')
 #rk=refine_tab.to_dict(orient="list")
 

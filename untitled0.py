@@ -12,26 +12,44 @@ import time
 import functools
 import sys
 
-import sqlalchemy
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
+def date_cutting_list(begin_year,begin_month,end_year=-1,end_month=-1):
+    res={}
+    if end_year==-1:
+        end_year=begin_year
+    if end_month==-1:
+        end_month=begin_month
+    
+    if begin_year==end_year:  #不跨年的切片
+        if begin_month>end_month:
+            begin_month,end_month=end_month,begin_month
+        
+        month=[i for i in range(begin_month,end_month+1)]
+        res[begin_year]=month
+    elif begin_year<end_year:  #跨年的切片
+        year=[i for i in range(begin_year,end_year)]
+        month=[i for i in range(1,13)]
+        for y in year:
+            res[y]=month
+        
+        month=[i for i in range(begin_month,13)]
+        res[begin_year]=month
+        month=[i for i in range(1,end_month+1)]
+        res[end_year]=month
+        
+    else:
+        print('起始年度不应大于结束年度！')
+    return res
 
-engine = create_engine(
-  "mysql+pymysql://root:abcd1234@localhost/clpc_ah?charset=utf8mb4", 
-  echo=True, 
-  max_overflow=5)
-
-l=engine.execute("select * from invoice;")
-#r=pd.DataFrame(l.fetchall())
-md=sqlalchemy.MetaData()
-table = sqlalchemy.Table('invoice', md, autoload=True, autoload_with=engine)
-col=table.c
-
-rec=pd.DataFrame(l.fetchall(),columns=col)
-
-Base=declarative_base()
-
-class User(Base):
-    __tablename__='发票入库记录'
-    id=column(Integer,Sequence())
+def test(a,b,c=-1,d=-1):
+    begin_year=a
+    begin_month=b
+    end_year=c
+    end_month=d
+    print(end_year,end_month)
+    
+    f=date_cutting_list(begin_year,begin_month,end_year,end_month)
+    j=f.get(2021)
+    print(j)
+    
+    
+t=test(2018,3,2022,7)

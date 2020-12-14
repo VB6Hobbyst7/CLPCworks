@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import re
 from gadgets import voucher_relating
+from gadgets import cash_flow_tab_gen
 this_path='E:/OneDrive/国寿养老工作/财务部工作/财务分析/财务收入分析/'
 
 origin=pd.read_excel(this_path+'三栏账数据源.xlsx',sheet_name='数据源',dtype={'日期':str,'业务摘要':str,'凭证号':str})
@@ -41,7 +42,8 @@ bank_journal=[]
 for index,row in bank_account.iterrows():
     if pd.isnull(row['凭证号'])==False:
         bank_journal.append(str(row['年度'])+str(row['凭证号']))
-
+#bank_journal只是列表，会有重复的
+        
 for index,row in origin.iterrows():
     #生成科目代码和科目名称的字典
     origin.loc[index,'日期']=origin.loc[index,'日期'][:10]
@@ -135,7 +137,7 @@ for index,row in origin.iterrows():
         if not nm_raw is None:
             nm_raw=nm_raw.group(0)
             nm_res=nm_raw
-            origin.iloc[index,-2]=reduct(nm_res)
+            origin.loc[index,'可辨认的客户名称']=reduct(nm_res)
             #处理调整的表述
             nm_head=re.compile('\A调整')
             nm_hd=nm_head.match(nm_raw)
@@ -197,10 +199,132 @@ for index,row in origin.iterrows():
         #现金账索引出实际支付的手续费
         if str(row['年度'])+str(row['凭证号']) in bank_journal:
             origin.loc[index,'现金流量标注']='实际支付的手续费'
-        
-origin['科目余额计算列']=origin["贷方"]-origin["借方"]
+    
+    #现金账索引引出实际支付的薪酬
+    if '应付职工薪酬' in row['一级科目']:
+        if str(row['年度'])+str(row['凭证号']) in bank_journal:
+            origin.loc[index,'现金流量标注']='实际支付的薪酬'
+    
+    #其他应付款中代职工支付的社保等公积金等费用
+    try:
+        if str(row['科目代码'])[:4]=="2241" and ('职工部分' in row['三级科目']):
+            if str(row['年度'])+str(row['凭证号']) in bank_journal:
+                origin.loc[index,'现金流量标注']='实际支付的薪酬'
+    except:
+        pass     
+    
+    #对业管费科目处理，业管费一级科目代码6601
+    #从业管费的摘要中提取业管费的部门名称
+    if str(row['科目代码'])[:4]=="6601":
+        try:
+            if re.search('(市场|(职业)|业务|财务|综合|运营).*部',txt_temp):
+                
+                nm_temp=re.search('(市场|(职业)|业务|财务|综合|运营).*部',txt_temp).group(0)
+                if nm_temp=="综合部":
+                    nm_temp="综合管理部"
+                elif nm_temp=='运营部':
+                    nm_temp="业务运营部"
+                origin.loc[index,'可辨认的成本中心']=nm_temp
+                
+        except:
+            pass
+        #对业管费的现金流量标注
+        if str(row['年度'])+str(row['凭证号']) in bank_journal:
+            origin.loc[index,'现金流量标注']='实际支付的业管费-%s' %(row['二级科目'])
+    
+    #对应交税费科目处理，应交税费一级科目代码2221
+    if str(row['科目代码'])[:4]=="2221":
+        #处理企业所得税
+        if str(row['二级科目'])=='企业所得税':
+            if str(row['年度'])+str(row['凭证号']) in bank_journal:
+                origin.loc[index,'现金流量标注']='实际支付的企业所得税'
+        #处理个人所得税
+        if str(row['二级科目'])=='个人所得税':
+            if str(row['年度'])+str(row['凭证号']) in bank_journal:
+                origin.loc[index,'现金流量标注']='实际支付的个人所得税'
+        #处理增值税及附加
+        if str(row['二级科目'])!=('个人所得税' or "企业所得税"):
+            if str(row['年度'])+str(row['凭证号']) in bank_journal:
+                origin.loc[index,'现金流量标注']='实际支付的增值税金及附加'
+    
+    #对固定资产科目处理，固定资产一级科目代码1601
+    if str(row['科目代码'])[:4]=="1601":
+        if str(row['年度'])+str(row['凭证号']) in bank_journal:
+            origin.loc[index,'现金流量标注']='实际支付的固定资产'
+    
+    #对营业外收入处理，营业外收入一级科目代码6301
+    if str(row['科目代码'])[:4]=="6301":
+        if str(row['年度'])+str(row['凭证号']) in bank_journal:
+            origin.loc[index,'现金流量标注']='实际支付的业管费-其他'
+    
+    #对其他应收款处理,一级科目代码1221
+    if str(row['科目代码'])[:4]=="1221":
+        if str(row['二级科目'])=="押金及保证金":
+            if str(row['年度'])+str(row['凭证号']) in bank_journal:
+                origin.loc[index,'现金流量标注']='实际支付的押金及保证金'
+        if str(row['二级科目'])=="员工":
+            if str(row['年度'])+str(row['凭证号']) in bank_journal:
+                origin.loc[index,'现金流量标注']='实际支付的员工借款'
+        if str(row['二级科目'])=="其他":
+            if str(row['年度'])+str(row['凭证号']) in bank_journal:
+                #其他项目应该具体情况具体分析吧
+                #origin.loc[index,'现金流量标注']='实际支付的其他项目'
+                pass
+    
+    #对其他应付款处理，一级科目2241
+    try:
+        if str(row['科目代码'])[:4]=="2241": 
+            if str(row['年度'])+str(row['凭证号']) in bank_journal:
+                if(re.search('工程|设备',row['二级科目'])):
+                    origin.loc[index,'现金流量标注']='实际支付的固定资产'
+                if(re.search('租赁',row['二级科目'])):
+                    origin.loc[index,'现金流量标注']='实际支付的租赁费'
+                if row['二级科目']=='其他':
+                    pass
+    except:
+        pass     
+    
+    #对应收管理费处理，一级科目1130
+    if str(row['科目代码'])[:4]=="1130":
+        if str(row['年度'])+str(row['凭证号']) in bank_journal:
+            origin.loc[index,'现金流量标注']='实际收到的管理费收入'
+    
+    #对利息收入处理，科目代码6111101100
+    if row['科目代码']==6111101100:
+        if str(row['年度'])+str(row['凭证号']) in bank_journal:
+            origin.loc[index,'现金流量标注']='实际收到的存款利息'
+    
+    #对待摊费用处理，一级科目1401
+    if str(row['科目代码'])[:4]=="1401":
+        if "租赁" in row['二级科目']:
+            if str(row['年度'])+str(row['凭证号']) in bank_journal:
+                origin.loc[index,'现金流量标注']='实际支付的租赁费'
+            
+    #对系统往来处理，一级科目1161
+    if str(row['科目代码'])[:4]=="1161":
+        if str(row['年度'])+str(row['凭证号']) in bank_journal:
+            origin.loc[index,'现金流量标注']='实际支付的总公司往来款'
+            
+    #对税金及附加处理，一级科目6401
+    if str(row['科目代码'])[:4]=="6401":
+        if str(row['年度'])+str(row['凭证号']) in bank_journal:
+            origin.loc[index,'现金流量标注']='实际支付的其他税金'
+    
+    #对预收账款处理，一级科目2210
+    if str(row['科目代码'])[:4]=="2210":
+        if str(row['年度'])+str(row['凭证号']) in bank_journal:
+            origin.loc[index,'现金流量标注']='实际收到的管理费收入'
+    
+    #对其他应收款-其他的处理，科目代码1221990000
+    #对请他应付款-其他的处理，科目代码2241990000
+    #这块要区分是与业务相关的还是代发的难度有点大，就先全归集到业管费-其他
+    '''
+    if row['科目代码']==1221990000 or 2241990000:
+        if str(row['年度'])+str(row['凭证号']) in bank_journal:
+            origin.loc[index,'现金流量标注']='实际支付的业管费-其他'
+    '''
 
-dbp=origin.loc[origin.科目代码==6051020500]
+origin['科目余额计算列']=origin["贷方"]-origin["借方"]
 origin.to_excel(this_path+'三栏账数据源.xlsx',sheet_name='数据源',index=False)
 relating_db=this_path+'三栏账数据源.xlsx'
 

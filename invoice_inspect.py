@@ -381,7 +381,7 @@ def inspector(rw_text,y,m):
         
         if "餐饮" in restautant[0]:
             grand_tab.loc[index,"餐饮标志"]=1
-            compl='.*(餐|饮|酒|菜|饭|烧|烤|锅|鱼|渔|牛|鸡|羊|猪|狗|肠|卤|吃|食|饺|肉|粥|虾)'
+            compl='.*(餐|饮|酒|菜|饭|烧|烤|锅|鱼|渔|牛|鸡|羊|猪|狗|肠|卤|吃|食|饺|肉|粥|虾|寿司|肯德基|汤包)'
             items=re.search(compl,row['销售方名称'])
             if items is None:       
                 grand_tab.loc[index,"预警标志"]=grand_tab.loc[index,'预警标志']+"销售方无餐饮店字样"
