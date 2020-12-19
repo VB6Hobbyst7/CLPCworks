@@ -233,19 +233,17 @@ for index,row in origin.iterrows():
             origin.loc[index,'现金流量标注']='实际支付的业管费-%s' %(row['二级科目'])
     
     #对应交税费科目处理，应交税费一级科目代码2221
-    if str(row['科目代码'])[:4]=="2221":
+    if str(row['科目代码'])[:4]=="2221" and\
+        str(row['年度'])+str(row['凭证号']) in bank_journal:
         #处理企业所得税
         if str(row['二级科目'])=='企业所得税':
-            if str(row['年度'])+str(row['凭证号']) in bank_journal:
-                origin.loc[index,'现金流量标注']='实际支付的企业所得税'
+            origin.loc[index,'现金流量标注']='实际支付的企业所得税'
         #处理个人所得税
-        if str(row['二级科目'])=='个人所得税':
-            if str(row['年度'])+str(row['凭证号']) in bank_journal:
-                origin.loc[index,'现金流量标注']='实际支付的个人所得税'
+        elif str(row['二级科目'])=='个人所得税':
+            origin.loc[index,'现金流量标注']='实际支付的个人所得税'
         #处理增值税及附加
-        if str(row['二级科目'])!=('个人所得税' or "企业所得税"):
-            if str(row['年度'])+str(row['凭证号']) in bank_journal:
-                origin.loc[index,'现金流量标注']='实际支付的增值税金及附加'
+        else:
+            origin.loc[index,'现金流量标注']='实际支付的增值税金及附加'
     
     #对固定资产科目处理，固定资产一级科目代码1601
     if str(row['科目代码'])[:4]=="1601":
@@ -255,7 +253,7 @@ for index,row in origin.iterrows():
     #对营业外收入处理，营业外收入一级科目代码6301
     if str(row['科目代码'])[:4]=="6301":
         if str(row['年度'])+str(row['凭证号']) in bank_journal:
-            origin.loc[index,'现金流量标注']='实际支付的业管费-其他'
+            origin.loc[index,'现金流量标注']='应收应付变动-其他'
     
     #对其他应收款处理,一级科目代码1221
     if str(row['科目代码'])[:4]=="1221":
@@ -265,12 +263,7 @@ for index,row in origin.iterrows():
         if str(row['二级科目'])=="员工":
             if str(row['年度'])+str(row['凭证号']) in bank_journal:
                 origin.loc[index,'现金流量标注']='实际支付的员工借款'
-        if str(row['二级科目'])=="其他":
-            if str(row['年度'])+str(row['凭证号']) in bank_journal:
-                #其他项目应该具体情况具体分析吧
-                #origin.loc[index,'现金流量标注']='实际支付的其他项目'
-                pass
-    
+        
     #对其他应付款处理，一级科目2241
     try:
         if str(row['科目代码'])[:4]=="2241": 
@@ -316,13 +309,13 @@ for index,row in origin.iterrows():
             origin.loc[index,'现金流量标注']='实际收到的管理费收入'
     
     #对其他应收款-其他的处理，科目代码1221990000
-    #对请他应付款-其他的处理，科目代码2241990000
-    #这块要区分是与业务相关的还是代发的难度有点大，就先全归集到业管费-其他
-    '''
-    if row['科目代码']==1221990000 or 2241990000:
+    #对请他应付款-其他的处理，科目代码
+    #这块要区分是与业务相关的还是代收代付的难度有点大，就先全归集到不计入现金流量科目
+
+    if row['科目代码']==1221990000 or row['科目代码']==2241990000:
         if str(row['年度'])+str(row['凭证号']) in bank_journal:
-            origin.loc[index,'现金流量标注']='实际支付的业管费-其他'
-    '''
+            origin.loc[index,'现金流量标注']='应收应付变动-其他'
+        #预留利用应收应付实际经济业务备查字典进行修正
 
 origin['科目余额计算列']=origin["贷方"]-origin["借方"]
 origin.to_excel(this_path+'三栏账数据源.xlsx',sheet_name='数据源',index=False)

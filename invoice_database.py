@@ -8,11 +8,11 @@ import os
 import pymysql
 import pandas as pd
 from invoice_inspect import inspector
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+import shutil
 import re
 from gadgets import timer
 import time
+
 
 #检查发票信息，生成导入数据库表
 
@@ -86,7 +86,11 @@ def OAfile_update():                        #更新系统公文号
     db.commit()
     cursor.close()
     db.close()
-    os.remove('C:/Users/ZhangXi/Desktop/update_tosql.xlsx')
+    
+    file_name1='C:/Users/ZhangXi/Desktop/update_tosql.xlsx'
+    file_name2='g:/备份仓库/发票更新信息入库备份/update_tosql_%s.xlsx' %(timestamp[:10])
+    shutil.copyfile(file_name1,file_name2)
+    os.remove(file_name1)
 
 @timer
 def length_test():
