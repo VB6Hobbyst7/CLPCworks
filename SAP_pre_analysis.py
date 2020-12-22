@@ -56,11 +56,11 @@ for index,row in origin.iterrows():
         AccCode[temp1]=temp
     
     txt_temp=row["业务摘要"]
+    nm_res=""
     if re.search('单据号:',txt_temp):
         filenum=re.search('单据号:',txt_temp)
         filenum=txt_temp[filenum.span()[1]:]
         origin.loc[index,'公文系统单据号']=filenum
-    
         
     if row['科目代码']==6041010000:#职业年金收入-受托费
         nm=txt_temp[4:-9]
@@ -86,8 +86,15 @@ for index,row in origin.iterrows():
         else:
             origin.iloc[index,3]='常规投管'
     
-    if row['科目代码']==6039020100:#企业年金收入-账管
-        nm_pattern=re.compile('(?<=确认应收).*(?=账管费)')
+    if row['科目代码']==1130090000:#应收管理费-职业年金受托费
+        if re.search('(?<=确认(应|实)收).*(?=受托费)',txt_temp):
+            nm_res=re.search('(?<=确认(应|实)收).*(?=受托费)',txt_temp).group(0)
+        elif re.search('(?<=安徽省).*(?=年金计划)',txt_temp):
+            nm_res=txt_temp
+        origin.loc[index,'可辨认的客户名称']=nm_res
+    
+    if row['科目代码']==6039020100 or row['科目代码']==1130020000: #企业年金收入-账管、应收管理费-账管
+        nm_pattern=re.compile('(?<=确认(应|实)收).*(?=账管费)')
         nm_raw=nm_pattern.search(txt_temp)
         if not nm_raw is None:    
             nm_raw=nm_raw.group(0)
@@ -130,8 +137,8 @@ for index,row in origin.iterrows():
             else:
                 origin.loc[index,'可辨认的受托/账管客户类型']="集合计划"
             
-    if row['科目代码']==6039010000:#企业年金收入-受托
-        nm_pattern=re.compile('(?<=确认应收).*(?=受托费)')
+    if row['科目代码']==6039010000 or row['科目代码']==1130010000:#企业年金收入-受托
+        nm_pattern=re.compile('(?<=确认(应|实)收).*(?=受托费)')
         nm_raw=nm_pattern.search(txt_temp) 
         #常规的受托费项目
         if not nm_raw is None:
@@ -315,7 +322,7 @@ for index,row in origin.iterrows():
     if row['科目代码']==1221990000 or row['科目代码']==2241990000:
         if str(row['年度'])+str(row['凭证号']) in bank_journal:
             origin.loc[index,'现金流量标注']='应收应付变动-其他'
-        #预留利用应收应付实际经济业务备查字典进行修正
+        #利用应收应付实际经济业务备查字典进行修正的工作在gadgets.cash_flow_tab_gen()中进行
 
 origin['科目余额计算列']=origin["贷方"]-origin["借方"]
 origin.to_excel(this_path+'三栏账数据源.xlsx',sheet_name='数据源',index=False)

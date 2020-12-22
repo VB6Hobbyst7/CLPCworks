@@ -62,7 +62,7 @@ def OAfile_gen():             #导出数据库中公文号为空的表
 def OAfile_update():                        #更新系统公文号
     #付款时间戳
     stamp_time=time.localtime(time.time())
-    timestamp=(time.strftime("%Y-%m-%d %H:%M:%S",stamp_time))
+    timestamp=(time.strftime("%Y-%m-%d-%H-%M-%S",stamp_time))
     update_tab=pd.read_excel('C:/Users/ZhangXi/Desktop/update_tosql.xlsx',dtype={'发票号码':str})
     update_tab.dropna(subset=['系统公文号'],inplace=True)
     update_tab['付款时间戳']=timestamp
@@ -88,12 +88,13 @@ def OAfile_update():                        #更新系统公文号
     db.close()
     
     file_name1='C:/Users/ZhangXi/Desktop/update_tosql.xlsx'
-    file_name2='g:/备份仓库/发票更新信息入库备份/update_tosql_%s.xlsx' %(timestamp[:10])
+    file_name2='g:/备份仓库/发票更新信息入库备份/update_tosql_%s.xlsx' %(timestamp)
     shutil.copyfile(file_name1,file_name2)
     os.remove(file_name1)
 
 @timer
-def length_test():
+def length_test():                 
+    #检查发票明细的长度是否一致
     test_tab=pd.read_excel('C:/Users/ZhangXi/Desktop/invoice_to_sql.xlsx',dtype={'发票号码':str})
     items=pd.DataFrame()
     
@@ -104,6 +105,34 @@ def length_test():
         items=pd.concat([items,temp1])
         temp.clear()
     print('检查完成')
+    
+    print('记录入库...')
+    db = pymysql.connect("localhost","root","abcd1234",'clpc_ah')
+    cursor = db.cursor()
+    col=str(tuple(test_tab.columns.values))
+    col=col.replace("\'","")
+    
+    for i in range(len(test_tab)):
+        rec=str(tuple(test_tab.loc[i,:]))
+        rec=rec.replace('nan','null')
+        insert_sql="insert into invoice%s values%s;" %(col,rec)
+        cursor.execute(insert_sql)
+    
+    try:
+        db.commit()
+        print('入库成功')
+        stamp_time=time.localtime(time.time())
+        timestamp=(time.strftime("%Y-%m-%d-%H-%M-%S",stamp_time))
+        
+        file_name1='C:/Users/ZhangXi/Desktop/invoice_to_sql.xlsx'
+        file_name2='g:/备份仓库/发票更新信息入库备份/invoice_to_sql_%s.xlsx' %(timestamp)
+        shutil.copyfile(file_name1,file_name2)
+        os.remove(file_name1)
+    except:
+        db.rollback()
+        print('入库失败')
+    cursor.close
+    db.close
     return items
 
 @timer
@@ -149,7 +178,7 @@ def items_detail():
     return items
 
 a="0"
-a=input('请选择本次处理的任务：\n1-查验发票、生成数据库表预备导入\n2-校验拟导入的发票明细长度\n3-导出数据库中空公文号的条目\n4-更新系统公文号\n5-导出发票项目明细\n>>>')
+a=input('请选择本次处理的任务：\n1-查验发票、生成数据库表预备导入\n2-校验拟导入的发票明细长度并入库\n3-导出数据库中空公文号的条目\n4-更新系统公文号\n5-导出发票项目明细\n>>>')
 
 if a=="0":
     pass
