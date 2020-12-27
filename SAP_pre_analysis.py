@@ -55,6 +55,13 @@ for index,row in origin.iterrows():
         temp1='%s-%s-%s' %(temp1[:4],temp1[4:6],temp1[6:])
         AccCode[temp1]=temp
     
+    if len(str(origin.loc[index,'月度']))==1:
+        origin.loc[index,'月度']='0%s' %(origin.loc[index,'月度'])
+    else:
+        origin.loc[index,'月度']='%s' %(origin.loc[index,'月度'])
+    
+    origin.loc[index,'凭证索引']='%s-%s' %(origin.loc[index,'年度'],origin.loc[index,'凭证号'])
+    
     txt_temp=row["业务摘要"]
     nm_res=""
     if re.search('单据号:',txt_temp):

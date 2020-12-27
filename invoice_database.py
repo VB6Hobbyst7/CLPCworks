@@ -62,7 +62,7 @@ def OAfile_gen():             #导出数据库中公文号为空的表
 def OAfile_update():                        #更新系统公文号
     #付款时间戳
     stamp_time=time.localtime(time.time())
-    timestamp=(time.strftime("%Y-%m-%d-%H-%M-%S",stamp_time))
+    timestamp=(time.strftime("%Y-%m-%d %H:%M:%S",stamp_time))
     update_tab=pd.read_excel('C:/Users/ZhangXi/Desktop/update_tosql.xlsx',dtype={'发票号码':str})
     update_tab.dropna(subset=['系统公文号'],inplace=True)
     update_tab['付款时间戳']=timestamp
