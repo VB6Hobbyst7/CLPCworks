@@ -16,11 +16,10 @@ import time
 
 #检查发票信息，生成导入数据库表
 
-
 def grand_tab_gen():
     rw_text=pd.read_csv('E:/OneDrive/国寿养老工作/invoice.txt',error_bad_lines=False)
-    y="2020"
-    m=["10",'11','12']
+    y="2021"
+    m=["01",'02','03']
     
     grand_tab=inspector(rw_text,y,m)
     grand_tab[grand_tab['系统公文号']==""]
@@ -87,6 +86,8 @@ def OAfile_update():                        #更新系统公文号
     cursor.close()
     db.close()
     
+    stamp_time=time.localtime(time.time())
+    timestamp=(time.strftime("%Y-%m-%d-%H-%M-%S",stamp_time))
     file_name1='C:/Users/ZhangXi/Desktop/update_tosql.xlsx'
     file_name2='g:/备份仓库/发票更新信息入库备份/update_tosql_%s.xlsx' %(timestamp)
     shutil.copyfile(file_name1,file_name2)
@@ -177,12 +178,12 @@ def items_detail():
     items.to_excel('C:/Users/ZhangXi/Desktop/已入账商品明细.xlsx',index=False)
     return items
 
-a="0"
-a=input('请选择本次处理的任务：\n1-查验发票、生成数据库表预备导入\n2-校验拟导入的发票明细长度并入库\n3-导出数据库中空公文号的条目\n4-更新系统公文号\n5-导出发票项目明细\n>>>')
+mission="0"
+mission=input('请选择本次处理的任务：\n1-查验发票、生成数据库表预备导入\n2-校验拟导入的发票明细长度并入库\n3-导出数据库中空公文号的条目\n4-更新系统公文号\n5-导出发票项目明细\n>>>')
 
-if a=="0":
+if mission=="0":
     pass
-elif a=="1":
+elif mission=="1":
     temp_tab=grand_tab_gen()
     #辅助列借用餐饮标志
     temp_tab=temp_tab[temp_tab['餐饮标志'].isin([2])]
@@ -190,11 +191,11 @@ elif a=="1":
     
     temp_tab.to_excel('C:/Users/ZhangXi/Desktop/invoice_to_sql.xlsx',index=False)
     alert_tab = temp_tab[temp_tab["预警标志"] != ""]
-elif a=="2":
+elif mission=="2":
     test=length_test()
-elif a=="3":
+elif mission=="3":
     load_tab=OAfile_gen()
-elif a=="4":
+elif mission=="4":
     OAfile_update()
-elif a=="5":
+elif mission=="5":
     items_detail=items_detail()

@@ -37,7 +37,8 @@ def reduct(nm):#对企业年金收入-受托-单一计划客户名称进行精�
     return nm
 
 #银行存款流水记录，收付实现制的预处理
-bank_account=origin[origin['一级科目']=='银行存款']
+cash_class=['库存现金','银行存款']     #大类现金科目
+bank_account=origin[origin['一级科目'].isin(cash_class)]
 bank_journal=[]
 for index,row in bank_account.iterrows():
     if pd.isnull(row['凭证号'])==False:

@@ -1,4 +1,4 @@
-b# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Created on Mon Feb  3 14:21:25 2020
 v1.0 has finished on 2020-2-18
@@ -174,7 +174,7 @@ def Acc_gen(raw_tab,path,a):
                     acct_temp.iloc[1,1]='%s*%s*%s' %(f_temp1['CUST_NAME'],f_temp1['FUND_NAME'],f_temp1['CR_REFER'])
                 elif a==4:
                     acct_temp.iloc[0,1]='%s*%s*%s*%s*%s' %(f_temp1['CUST_NAME'],f_temp1['FUND_NAME'],f_temp1['CT_REFER'],f_temp1['CR_REFER'],f_temp1['REFERID'])
-                    acct_temp.iloc[1,1]='%s*%s*%s*%s*%s' %(f_temp1['CUST_NAME'],f_temp1print(Acct_prs['日期'])['FUND_NAME'],f_temp1['CT_REFER'],f_temp1['CR_REFER'],f_temp1['REFERID'])
+                    acct_temp.iloc[1,1]='%s*%s*%s*%s*%s' %(f_temp1['CUST_NAME'],f_temp1['FUND_NAME'],f_temp1['CT_REFER'],f_temp1['CR_REFER'],f_temp1['REFERID'])
             
                 acct_temp.iloc[0,2]=f_temp1['ACK_MONEY']/10000
                 acct_temp.iloc[1,3]=f_temp1['ACK_MONEY']/10000
@@ -241,11 +241,14 @@ try:
     tab_refine=tab_processing(pdtinfo)
 except:
     tab_refine=pd.DataFrame()
+stamptime=time.strftime('%Y-%m-%d',time.localtime())
+tab_refine['time_stamp']=stamptime
+
 
 ############链接mysql的个养销售记录#########################
 db = pymysql.connect("localhost","root","abcd1234",'clpc_ah')
 cursor = db.cursor()
-sql=("SELECT * from funds_sales_2014_2020")
+sql=("SELECT * from funds_sales_records")
 cursor.execute(sql)
 temp=cursor.fetchall()
 
@@ -254,21 +257,20 @@ columnNames = [columnDes[i][0] for i in range(len(columnDes))] #获取列名
 data_from_mysql= pd.DataFrame([list(i) for i in temp],columns=columnNames)
 db.close
 tab_refine=tab_refine.append(data_from_mysql,ignore_index=True)
-
 ##########################################
 
 
 
 
 #类SQL查询
-tab_refine=tab_refine[tab_refine['COMPANY_REFER'].isin(['养老险公司'])]
+#tab_refine=tab_refine[tab_refine['COMPANY_REFER'].isin(['养老险公司'])]
 #tab_refine=tab_refine[tab_refine['FUND_ACCT'].isin(['CL1000063547','CL1000007334'])]
-#tab_refine=tab_refine.loc[tab_refine.CUSTNAME_REFER=="张曦"]
+#tab_refine=tab_refine.loc[tab_refine.CUST_NAME=="范文波"]
 #tab_refine=tab_refine[tab_refine['ACK_DATE']<'2016-10-01']
 tab_refine=tab_refine[tab_refine['ACK_DATE']>'2020-10-31']
 
 to_anal=tab_refine
-to_anal.to_excel(save_path+'analyse_refine_tab.xlsx')
+to_anal.to_excel(save_path+'refine_tab_tosql.xlsx')
 
 path='g:/pdt/account/'
 f=os.listdir(path)
@@ -277,4 +279,3 @@ for files in f:
 
 print("*REPORT*path:%s-%s files have been removed" %(save_path,len(f)))
 Acc_gen(to_anal,save_path,int(a))
-to_anal.to_excel(save_path+'analyse_refine_tab.xlsx')
