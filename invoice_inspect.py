@@ -320,9 +320,16 @@ def inspector(rw_text,y,m):
     dpt="未做标识"
     for i in range(len(rw)):    
         text=rw.iloc[i,0]
-        
+        #=====================================
+        for d in departments_list:
+            if re.search(".*"+d+".*",text):
+                dpt=d
+                break
+        '''
         if text in departments_list:
             dpt=text    
+        '''
+        #=====================================
         if re.search(".*发票查验明细",text):
             flag+=1
             rw.iloc[i,1]=flag

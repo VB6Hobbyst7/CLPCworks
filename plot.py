@@ -11,17 +11,15 @@ import matplotlib.pyplot as plt
 
 
 
-'''
-stk=pd.read_excel('E:/OneDrive/证券交易/证券交易0411.xlsm',sheet_name='金融街')
-price=(stk['市价'])
-price=price.dropna()
-price>8
-'''
 
+#=======================================================================
+# ==Date:==          ==Author:==                 ==description==
+# 2021-1-22           zhangxi                    绘制财务分析的收入总图
+#=======================================================================
 
 #/绘制财务分析报告中管理费收入总体变动情况表/
 this_path='E:/OneDrive/国寿养老工作/财务部工作/财务分析/财务收入分析/'
-origin=pd.read_excel(this_path+'plotting.xlsx')
+origin=pd.read_excel(this_path+'plotting.xlsx',sheet_name="管理费总收入制图")
 
 pdt=list(set(origin['收入明细']))
 pdt.sort()
@@ -63,6 +61,7 @@ plt.rcParams['font.sans-serif']=['SimHei']#这两句作用为防止中文乱码
 plt.rcParams['axes.unicode_minus']=False
 
 #绘制累积柱状图
+
 color_dict={}
 color_dict['1.企业-受托']='royalblue'
 color_dict['2.企业-投资']='steelblue'
@@ -73,25 +72,26 @@ color_dict['6.养老金产品']='indianred'
 color_dict['7.养老保障产品']='salmon'
 
 fig,ax1=plt.subplots()
-ax1.set_ylabel('收入金额（万元）')
+ax1.set_ylabel('收入金额（万元）',fontsize=20)
 #柱状图
 for p in pdt:
-    plt.bar(x=range(len(bar_tab.index)),height=bar_tab.loc[:,p],bottom=bar_bottom_tab.loc[:,p],label=p,color=color_dict[p])
+    plt.bar(x=range(len(bar_tab.index)),height=bar_tab.loc[:,p],width=0.6,\
+            bottom=bar_bottom_tab.loc[:,p],label=p,color=color_dict[p])
 plt.legend(loc=0,ncol=3,fontsize=16)
 ax1.yaxis.grid(True)
 ax2=ax1
 #标记年度合计数
 ax2=plt.plot(range(len(x_labels)),origin.loc['年度合计',:],"r")
 for s in range(len(x_labels)):
-    plt.text(s,origin.iloc[-2,s]+100,round(origin.iloc[-2,s],2),fontsize=16)
+    plt.text(s,origin.iloc[-2,s]+100,round(origin.iloc[-2,s],2),fontsize=24)
 #标记年度增长率
 for s in range(len(x_labels)-1):
-    plt.text((s+s+1)/2,(origin.iloc[-2,s]+origin.iloc[-2,s+1])/2+200,"(%s)" %origin.iloc[-1,s+1],color='r',fontsize=14,style='italic')
+    plt.text((s+s+1)/2,(origin.iloc[-2,s]+origin.iloc[-2,s+1])/2+200,"(%s)" %origin.iloc[-1,s+1],color='r',fontsize=18,style='italic')
 #标记柱状图的百分比
 for s in range(len(x_labels)):
     for p in range(len(pdt)):
         if percent_tab.iloc[s,p]>0.02:
-            plt.text(s-0.08,bar_bottom_tab.iloc[s,p]+bar_tab.iloc[s,p]/2,'{:.2%}'.format(percent_tab.iloc[s,p]),fontsize=14,color='k')
+            plt.text(s*0.96,bar_bottom_tab.iloc[s,p]+bar_tab.iloc[s,p]/2.8,'{:.2%}'.format(percent_tab.iloc[s,p]),fontsize=20,color='k')
         
-plt.xticks(range(len(x_labels)),labels=x_labels,fontsize=16)
-plt.yticks(fontsize=16)
+plt.xticks(range(len(x_labels)),labels=x_labels,fontsize=24)
+plt.yticks(fontsize=18)

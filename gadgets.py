@@ -75,6 +75,55 @@ def voucher_relating(db_account):
     db.commit()
     cursor.close()
     db.close()
+#=======================================================================
+# ==Date:==          ==Author:==                 ==description==
+# 2021-1-26            zhangxi                  在MySQl数据库中关联会计科目
+#=======================================================================
+@timer
+def account_relating(db_account,AccCode):
+    db = pymysql.connect("localhost","root","abcd1234",'clpc_ah')
+    cursor = db.cursor()
+    
+    sql="select  * from invoice" 
+    #where (会计科目 is null or `会计科目`='')
+    cursor.execute(sql)
+    rows=cursor.fetchall()
+    columnDes = cursor.description #获取连接对象的描述信息
+    columnNames = [columnDes[i][0] for i in range(len(columnDes))] #获取列名
+    #x_tab:从MYSQL数据库中取出发票表
+    x_tab= pd.DataFrame([list(i) for i in rows],columns=columnNames)
+    
+    #inter_tab:新鲜出炉的三栏式明细账
+    inter_tab=pd.read_excel(db_account,dtype={'科目代码':str,'凭证索引':str})
+    inter_tab=inter_tab[['科目代码','凭证索引']]
+    
+    index_code_dict={}
+    #制作凭证索引-科目代码-科目名称字典
+    for index,row in inter_tab.iterrows():
+        if re.search('.*nan.*',row['凭证索引']):
+            pass
+        else:
+            index_code_dict[row['凭证索引']]=AccCode[row['科目代码']]
+            
+    
+    sql=("UPDATE invoice set 会计科目=%s where 校验码=%s;")
+    for index,row in x_tab.iterrows():
+        try:
+            if re.search('B\d*',row['系统公文号']) and re.search('\d*',row['凭证号']):
+                temp1='%s-%s' %(row['系统公文号'][2:6],row['凭证号'])
+                index_code_dict[row['校验码']]=index_code_dict[temp1]
+                cursor.execute(sql,(index_code_dict[row['校验码']],row['校验码']))
+        except:
+            pass
+    
+    db.commit()
+    cursor.close()
+    db.close()
+        
+    return
+
+
+
 #=========================表格日期切片器（切成字典）=============================
 def date_cutting_dict(begin_year,begin_month,end_year,end_month):
     res={}

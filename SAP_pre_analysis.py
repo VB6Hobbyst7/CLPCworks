@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import re
 from gadgets import voucher_relating
+from gadgets import account_relating
 from gadgets import cash_flow_tab_gen
 this_path='E:/OneDrive/国寿养老工作/财务部工作/财务分析/财务收入分析/'
 
@@ -53,7 +54,7 @@ for index,row in origin.iterrows():
         temp='%s-%s-%s' %(row['一级科目'],row['二级科目'],row['三级科目'])
         temp=temp.replace('-nan','')
         temp1=str(row[0])
-        temp1='%s-%s-%s' %(temp1[:4],temp1[4:6],temp1[6:])
+        #temp1='%s-%s-%s' %(temp1[:4],temp1[4:6],temp1[6:])
         AccCode[temp1]=temp
     
     if len(str(origin.loc[index,'月度']))==1:
@@ -337,6 +338,6 @@ origin.to_excel(this_path+'三栏账数据源.xlsx',sheet_name='数据源',index
 relating_db=this_path+'三栏账数据源.xlsx'
 
 voucher_relating(relating_db) #用公文号关联凭证号
-
+account_relating(relating_db,AccCode) #发票关联会计科目
         
 
