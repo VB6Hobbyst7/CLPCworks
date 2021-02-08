@@ -15,7 +15,6 @@ import time
 
 
 #检查发票信息，生成导入数据库表
-
 def grand_tab_gen():
     rw_text=pd.read_csv('E:/OneDrive/国寿养老工作/invoice.txt',error_bad_lines=False)
     y="2021"
@@ -51,6 +50,7 @@ def OAfile_gen():             #导出数据库中公文号为空的表
         else:
             x_tab.loc[index,'发票明细']=''
     x_tab=x_tab[['入库时间戳','发票明细','发票号码','销售方名称','价税合计','报销部门（参考）','系统公文号']]
+    print(x_tab)
     x_tab.to_excel('C:/Users/ZhangXi/Desktop/update_tosql.xlsx',index=False)
     
     cursor.close()
@@ -89,7 +89,7 @@ def OAfile_update():                        #更新系统公文号
     stamp_time=time.localtime(time.time())
     timestamp=(time.strftime("%Y-%m-%d-%H-%M-%S",stamp_time))
     file_name1='C:/Users/ZhangXi/Desktop/update_tosql.xlsx'
-    file_name2='g:/备份仓库/发票更新信息入库备份/update_tosql_%s.xlsx' %(timestamp)
+    file_name2='f:/备份仓库/发票更新信息入库备份/update_tosql_%s.xlsx' %(timestamp)
     shutil.copyfile(file_name1,file_name2)
     os.remove(file_name1)
 
@@ -126,7 +126,7 @@ def length_test():
         timestamp=(time.strftime("%Y-%m-%d-%H-%M-%S",stamp_time))
         
         file_name1='C:/Users/ZhangXi/Desktop/invoice_to_sql.xlsx'
-        file_name2='g:/备份仓库/发票更新信息入库备份/invoice_to_sql_%s.xlsx' %(timestamp)
+        file_name2='f:/备份仓库/发票更新信息入库备份/invoice_to_sql_%s.xlsx' %(timestamp)
         shutil.copyfile(file_name1,file_name2)
         os.remove(file_name1)
     except:
@@ -158,6 +158,7 @@ def items_detail():
         temp['销售方名称']=row['销售方名称']
         temp['系统公文号']=row['系统公文号']
         temp['凭证号']=row['凭证号']
+        temp['会计科目']=row['会计科目']
         
         temp1=pd.DataFrame(temp)
         items=pd.concat([items,temp1],ignore_index=True)

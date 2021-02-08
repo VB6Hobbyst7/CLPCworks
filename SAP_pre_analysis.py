@@ -189,6 +189,18 @@ for index,row in origin.iterrows():
                 origin.loc[index,'可辨认的客户名称']=reduct(nm_res)
             origin.loc[index,'可辨认的受托/账管客户类型']='单一计划'
     
+    if row['科目代码']==6039030000: #企业年金-投管
+        if re.search('.*业绩报酬.*',row['业务摘要']):
+            origin.loc[index,'可辨认的成本中心']='业绩报酬'
+            origin.loc[index,'可辨认的受托/账管客户类型']='单一计划'
+            
+            temp='确认单一计划业绩报酬--'
+            if re.search(temp,row['业务摘要']):
+                temp=re.search(temp,row['业务摘要']).span()[1]
+                origin.loc[index,'可辨认的客户名称']=row['业务摘要'][temp:]
+                print(row['业务摘要'][temp:])
+            
+    
     if row['科目代码']==6051020500: #其他业务收入-养老保障
         if '团体' in txt_temp:
             origin.iloc[index,3]='团养'

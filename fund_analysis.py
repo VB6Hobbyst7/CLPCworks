@@ -228,9 +228,9 @@ else:
     print("BE CAREFUL:请输入合法的账户类型代码")
     sys.exit()
 #-----------------------------------------------------------
-db_path="G:/pdt/database"
+db_path="F:/pdt/database"         #新进的数据，断开MYSQL生成入库数据
 cardre_path="E:/OneDrive/Python工作/CLPCworks/"
-save_path='g:/pdt/'
+save_path='f:/pdt/'
 pdtinfo=pd.read_csv(cardre_path+"产品基本信息查询.csv")
 pdtinfo=pdtinfo.rename(columns=lambda x:x.replace('C_FUNDNAME','FUND_NAME'))
 pdtinfo=pdtinfo[3:]    #前三条是月月盈、半年盈等，有重复
@@ -263,7 +263,7 @@ tab_refine=tab_refine.append(data_from_mysql,ignore_index=True)
 
 
 #类SQL查询
-#tab_refine=tab_refine[tab_refine['COMPANY_REFER'].isin(['养老险公司'])]
+tab_refine=tab_refine[tab_refine['COMPANY_REFER'].isin(['养老险公司'])]
 #tab_refine=tab_refine[tab_refine['FUND_ACCT'].isin(['CL1000063547','CL1000007334'])]
 #tab_refine=tab_refine.loc[tab_refine.CUST_NAME=="范文波"]
 #tab_refine=tab_refine[tab_refine['ACK_DATE']<'2016-10-01']
@@ -272,7 +272,7 @@ tab_refine=tab_refine[tab_refine['ACK_DATE']>'2020-10-31']
 to_anal=tab_refine
 to_anal.to_excel(save_path+'refine_tab_tosql.xlsx')
 
-path='g:/pdt/account/'
+path='f:/pdt/account/'
 f=os.listdir(path)
 for files in f:
     os.remove(path+files)

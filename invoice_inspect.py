@@ -320,16 +320,12 @@ def inspector(rw_text,y,m):
     dpt="未做标识"
     for i in range(len(rw)):    
         text=rw.iloc[i,0]
-        #=====================================
+        
         for d in departments_list:
             if re.search(".*"+d+".*",text):
                 dpt=d
                 break
-        '''
-        if text in departments_list:
-            dpt=text    
-        '''
-        #=====================================
+        
         if re.search(".*发票查验明细",text):
             flag+=1
             rw.iloc[i,1]=flag
@@ -388,7 +384,7 @@ def inspector(rw_text,y,m):
         
         if "餐饮" in restautant[0]:
             grand_tab.loc[index,"餐饮标志"]=1
-            compl='.*(餐|饮|酒|菜|饭|烧|烤|锅|鱼|渔|牛|鸡|羊|猪|狗|肠|卤|吃|食|饺|肉|粥|虾|寿司|肯德基|汤包|海鲜)'
+            compl='.*(餐|饮|酒|菜|饭|烧|烤|锅|鱼|渔|牛|鸡|羊|猪|狗|鹅|肠|卤|吃|食|饺|肉|粥|虾|寿司|肯德基|汤包|海鲜)'
             items=re.search(compl,row['销售方名称'])
             if items is None:       
                 grand_tab.loc[index,"预警标志"]=grand_tab.loc[index,'预警标志']+"销售方无餐饮店字样"
@@ -449,7 +445,7 @@ def inspector(rw_text,y,m):
     
     print('====================去重列表====================')
     print(drop_tab[['报销部门（参考）','开票日期','发票号码','价税合计','入库时间戳']])
-    print('：去除数据库中已有重复记录的发票%s张' %len(drop_tab))
+    print('：去除数据库中已有重复记录的发票%s张' %str(len(drop_tab)/2)[:-2])
     
     grand_tab=grand_tab[grand_tab['校验码'].isin(instant_tab_list)]
     

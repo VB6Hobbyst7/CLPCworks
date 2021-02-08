@@ -20,7 +20,7 @@ def code_back_up():
     
     for index,row in code_list.iterrows():
         try:
-            shutil.copyfile(row['文件所在目录']+row['file_name'],'G:/备份仓库/Excel_VBA_files/'+row['file_name'])
+            shutil.copyfile(row['文件所在目录']+row['file_name'],'F:/备份仓库/Excel_VBA_files/'+row['file_name'])
             shutil.copyfile(row['文件所在目录']+row['file_name'],row['git备份目录']+row['file_name'])
         except:
             print("failed:",row['文件所在目录']+row['file_name'])
@@ -60,7 +60,7 @@ def voucher_relating(db_account):
         relating_dict[sys_num.group(0)]=row['凭证号']
     
     sql1=("UPDATE invoice set 凭证号=%s where 系统公文号=%s;")
-    sql2=("UPDATE invoice set 凭证号='---' where 系统公文号='作废';")
+    sql2=("UPDATE invoice set 凭证号='---' where 系统公文号 like'%作废%';")
     cursor.execute(sql2)
     
     for i in range(len(x_tab)):
@@ -252,8 +252,8 @@ def cash_flow_tab_gen(begin_year,begin_month,end_year=-1,end_month=-1):    #开�
     non_current_tab.drop('现金流量标志',axis=1,inplace=True)
     
     current_flows_tab=current_flows_tab[~current_flows_tab['一级科目'].isin(cash_like_list)]
-    current_flows_tab.to_excel('G:/python练习/现金流量项目切表.xlsx')
-    non_current_tab.to_excel('G:/python练习/非现金流量项目切表.xlsx')
+    current_flows_tab.to_excel('f:/python练习/现金流量项目切表.xlsx')
+    non_current_tab.to_excel('f:/python练习/非现金流量项目切表.xlsx')
     
     cash_flow_keys=set(current_flows_tab['现金流量标注'].dropna())
     cash_flow_dict=dict.fromkeys(cash_flow_keys,0)
