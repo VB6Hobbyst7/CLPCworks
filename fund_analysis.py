@@ -265,9 +265,9 @@ tab_refine=tab_refine.append(data_from_mysql,ignore_index=True)
 #类SQL查询
 tab_refine=tab_refine[tab_refine['COMPANY_REFER'].isin(['养老险公司'])]
 #tab_refine=tab_refine[tab_refine['FUND_ACCT'].isin(['CL1000063547','CL1000007334'])]
-#tab_refine=tab_refine.loc[tab_refine.CUST_NAME=="范文波"]
+#tab_refine=tab_refine.loc[tab_refine.CUST_NAME=="程剑秋"]
 #tab_refine=tab_refine[tab_refine['ACK_DATE']<'2016-10-01']
-tab_refine=tab_refine[tab_refine['ACK_DATE']>'2020-10-31']
+#tab_refine=tab_refine[tab_refine['ACK_DATE']>'2020-10-31']
 
 to_anal=tab_refine
 to_anal.to_excel(save_path+'refine_tab_tosql.xlsx')
