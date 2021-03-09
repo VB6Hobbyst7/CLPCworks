@@ -47,6 +47,8 @@ for index,row in bank_account.iterrows():
 #bank_journal只是列表，会有重复的
         
 for index,row in origin.iterrows():
+    if index % 100==0:
+        print('正在处理第%s行，共%s行' %(index,len(origin)))
     #生成科目代码和科目名称的字典
     origin.loc[index,'日期']=origin.loc[index,'日期'][:10]
 
@@ -336,9 +338,8 @@ for index,row in origin.iterrows():
         if str(row['年度'])+str(row['凭证号']) in bank_journal:
             origin.loc[index,'现金流量标注']='实际收到的管理费收入'
     
-    #对其他应收款-其他的处理，科目代码1221990000
-    #对请他应付款-其他的处理，科目代码
-    #这块要区分是与业务相关的还是代收代付的难度有点大，就先全归集到不计入现金流量科目
+    #对其他应收款-其他，对其他应付款-其他，营业外收收支的处理
+    #这块要区分是与业务相关的还是代收代付的难度有点大，倒霉玩意太多，就先全归集到不计入现金流量科目
 
     if row['科目代码']==1221990000 or row['科目代码']==2241990000:
         if str(row['年度'])+str(row['凭证号']) in bank_journal:

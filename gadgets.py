@@ -13,6 +13,7 @@ import numpy as np
 import re
 import shutil
 
+#np.set_printoptions(formatter={'all':lambda x: str(Fraction(x).limit_denominator())})
 #===================重要的Excel文件自动备份到本地SD卡和git备份仓库=================
 def code_back_up():
     code_list=pd.read_excel('E:/OneDrive/Python工作/CLPCworks/VBA_PY_Code_List.xlsx')
@@ -207,7 +208,6 @@ def cash_flow_tab_gen(begin_year,begin_month,end_year=-1,end_month=-1):    #开�
     for i in range(len(acc_code)):
         bank_acc=bank_account[bank_account.科目代码==acc_code[i]]
         bank_acc.dropna(subset=['凭证号'],inplace=True)
-        
         bank_acc.reset_index(drop=True,inplace=True)
         
         a=bank_acc.loc[0,'余额']+bank_acc.loc[0,'科目余额计算列']
