@@ -68,6 +68,7 @@ def tab_processing(pdtinfo):
 @timer
 def Acc_gen(raw_tab,path,a):
     f=raw_tab
+    print("本次处理任务的条目数：%s行" %len(f))
     f['FUND_CLASS']=f['FUND_NAME']
     #ZBXS:不同产品的折算系数
     f.loc[f['FUND_CODE']=='CL8010','FUND_CLASS']='月月盈'
@@ -263,10 +264,10 @@ tab_refine=tab_refine.append(data_from_mysql,ignore_index=True)
 
 
 #类SQL查询
-tab_refine=tab_refine[tab_refine['COMPANY_REFER'].isin(['养老险公司'])]
+#tab_refine=tab_refine[tab_refine['COMPANY_REFER'].isin(['养老险公司'])]
 #tab_refine=tab_refine[tab_refine['FUND_ACCT'].isin(['CL1000063547','CL1000007334'])]
 #tab_refine=tab_refine.loc[tab_refine.CUST_NAME=="程剑秋"]
-#tab_refine=tab_refine[tab_refine['ACK_DATE']<'2016-10-01']
+tab_refine=tab_refine[tab_refine['ACK_DATE']<'2020-12-31']
 #tab_refine=tab_refine[tab_refine['ACK_DATE']>'2020-10-31']
 
 to_anal=tab_refine

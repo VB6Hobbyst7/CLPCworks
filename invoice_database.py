@@ -8,9 +8,10 @@ import os
 import pymysql
 import pandas as pd
 from invoice_inspect import inspector
+from gadgets import timer
+from gadgets import reset_invoice_txt
 import shutil
 import re
-from gadgets import timer
 import time
 
 
@@ -18,7 +19,7 @@ import time
 def grand_tab_gen():
     rw_text=pd.read_csv('E:/OneDrive/国寿养老工作/invoice.txt',error_bad_lines=False)
     y="2021"
-    m=["01",'02','03']
+    m=["04",'05','06']
     
     grand_tab=inspector(rw_text,y,m)
     grand_tab[grand_tab['系统公文号']==""]
@@ -95,7 +96,7 @@ def OAfile_update():                        #更新系统公文号
 
 @timer
 def length_test():                 
-    #检查发票明细的长度是否一致
+    #检查发票明细的长度是否一致,然后入库
     test_tab=pd.read_excel('C:/Users/ZhangXi/Desktop/invoice_to_sql.xlsx',dtype={'发票号码':str})
     items=pd.DataFrame()
     
@@ -124,6 +125,11 @@ def length_test():
         print('入库成功')
         stamp_time=time.localtime(time.time())
         timestamp=(time.strftime("%Y-%m-%d-%H-%M-%S",stamp_time))
+        
+        file_name1='E:/OneDrive/国寿养老工作/invoice.txt'
+        file_name2='f:/备份仓库/发票更新信息入库备份/invoice_txt_%s.txt' %(timestamp)
+        shutil.copyfile(file_name1,file_name2)
+        reset_invoice_txt(test_tab)
         
         file_name1='C:/Users/ZhangXi/Desktop/invoice_to_sql.xlsx'
         file_name2='f:/备份仓库/发票更新信息入库备份/invoice_to_sql_%s.xlsx' %(timestamp)

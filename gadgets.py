@@ -300,3 +300,30 @@ def cash_flow_tab_gen(begin_year,begin_month,end_year=-1,end_month=-1):    #开�
     
     return 
 
+#======================成功更新发票数据库后，更新invoice.txt====================================
+def reset_invoice_txt(test_tab):
+    tm=(time.localtime())
+    tm_y=tm.tm_year
+    tm_m=tm.tm_mon
+    tm_d=tm.tm_mday
+    tm_h=tm.tm_hour
+    tm_min=tm.tm_min
+    tm_sec=tm.tm_sec
+    time_string="%s-%s-%s %s:%s:%s" %(tm_y,tm_m,tm_d,tm_h,tm_min,tm_sec)
+    
+    tuple_tab=test_tab[['报销部门（参考）','发票号码','价税合计',"查验时间"]]
+    
+    f='E:/OneDrive/国寿养老工作/invoice.txt'
+    t=open(f,'w+')
+    t.write('%s:已将查验记录导入MySql数据库' % time_string)
+    t.write('\n导入清单：')
+    t.write('\n==========================================================')
+    t.write('\n序号  报销部门  发票号码    金额          查验时间     ')
+    t.write('\n==========================================================')
+    
+    tuples=[tuple(i) for i in tuple_tab.values]
+    for i in range(len(tuples)):
+        t.write('\n%s  %s' %(i,str(tuples[i])[1:-1]))
+        t.write('\n==========================================================')
+    t.write('\n')
+    

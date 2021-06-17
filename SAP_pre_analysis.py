@@ -47,7 +47,8 @@ for index,row in bank_account.iterrows():
 #bank_journal只是列表，会有重复的
         
 for index,row in origin.iterrows():
-    if index % 100==0:
+    if index % 100==0 or index==len(origin)-1:
+        
         print('正在处理第%s行，共%s行' %(index,len(origin)))
     #生成科目代码和科目名称的字典
     origin.loc[index,'日期']=origin.loc[index,'日期'][:10]
@@ -192,15 +193,17 @@ for index,row in origin.iterrows():
             origin.loc[index,'可辨认的受托/账管客户类型']='单一计划'
     
     if row['科目代码']==6039030000: #企业年金-投管
-        if re.search('.*业绩报酬.*',row['业务摘要']):
-            origin.loc[index,'可辨认的成本中心']='业绩报酬'
+        if re.search('.*业绩报酬.*',row['业务摘要']) or re.search('.*回冲.*',row['业务摘要']):
+            origin.iloc[index,3]='业绩报酬'
             origin.loc[index,'可辨认的受托/账管客户类型']='单一计划'
             
             temp='确认单一计划业绩报酬--'
             if re.search(temp,row['业务摘要']):
                 temp=re.search(temp,row['业务摘要']).span()[1]
                 origin.loc[index,'可辨认的客户名称']=row['业务摘要'][temp:]
-                print(row['业务摘要'][temp:])
+        
+        if re.search('.单一计划.*',row['业务摘要']):
+            origin.loc[index,'可辨认的受托/账管客户类型']='单一计划'
             
     
     if row['科目代码']==6051020500: #其他业务收入-养老保障
@@ -255,6 +258,14 @@ for index,row in origin.iterrows():
                 elif nm_temp=='运营部':
                     nm_temp="业务运营部"
                 origin.loc[index,'可辨认的成本中心']=nm_temp
+                
+                #对未用的成本中心进行二次分类，借用可辨认的客户名称栏
+                origin.loc[index,'可辨认的客户名称']=nm_temp
+                if nm_temp=="":
+                    origin.loc[index,'可辨认的成本中心']
+                elif "市场" in nm_temp:
+                    origin.loc[index,'可辨认的客户名称']="市场中心"
+                
                 
         except:
             pass

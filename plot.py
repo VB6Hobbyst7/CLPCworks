@@ -75,7 +75,7 @@ fig,ax1=plt.subplots()
 ax1.set_ylabel('收入金额（万元）',fontsize=20)
 #柱状图
 for p in pdt:
-    plt.bar(x=range(len(bar_tab.index)),height=bar_tab.loc[:,p],width=0.6,\
+    plt.bar(x=range(len(bar_tab.index)),height=bar_tab.loc[:,p],width=0.618,\
             bottom=bar_bottom_tab.loc[:,p],label=p,color=color_dict[p])
 plt.legend(loc=0,ncol=3,fontsize=16)
 ax1.yaxis.grid(True)
@@ -85,13 +85,13 @@ ax2=plt.plot(range(len(x_labels)),origin.loc['年度合计',:],"r")
 for s in range(len(x_labels)):
     plt.text(s,origin.iloc[-2,s]+100,round(origin.iloc[-2,s],2),fontsize=24)
 #标记年度增长率
-for s in range(len(x_labels)-1):
-    plt.text((s+s+1)/2,(origin.iloc[-2,s]+origin.iloc[-2,s+1])/2+200,"(%s)" %origin.iloc[-1,s+1],color='r',fontsize=18,style='italic')
+for s in range(len(x_labels)-1-1):
+    plt.text((s+s+1)/2,(origin.iloc[-2,s]+origin.iloc[-2,s+1])/2+200,"(%s)" %origin.iloc[-1,s+1],color='r',fontsize=14,style='italic')
 #标记柱状图的百分比
 for s in range(len(x_labels)):
     for p in range(len(pdt)):
         if percent_tab.iloc[s,p]>0.02:
-            plt.text(s*0.96,bar_bottom_tab.iloc[s,p]+bar_tab.iloc[s,p]/2.8,'{:.2%}'.format(percent_tab.iloc[s,p]),fontsize=20,color='k')
+            plt.text(s*0.98,bar_bottom_tab.iloc[s,p]+bar_tab.iloc[s,p]/2.8,'{:.2%}'.format(percent_tab.iloc[s,p]),fontsize=16,color='k')
         
 plt.xticks(range(len(x_labels)),labels=x_labels,fontsize=24)
 plt.yticks(fontsize=18)
